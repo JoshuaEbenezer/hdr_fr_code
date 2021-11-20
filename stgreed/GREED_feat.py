@@ -3,7 +3,7 @@ from entropy.entropy_cal import video_process
 from entropy.entropy_temporal_pool import entropy_temporal_pool
 import numpy as np
 
-def greed_feat(args):
+def greed_feat(args,nl_method,nl_param.nl_domain):
     dist_path = args.dist_path
     ref_path = args.ref_path
     if (args.dist_fps!=args.ref_fps):
@@ -53,12 +53,13 @@ def greed_feat(args):
                    fps,dist_T, filt, num_levels, scales]
     print(arg_list)
     #calculate spatial entropy
-    ref_entropy = video_process(ref_path, width, height, bit_depth, gray, \
+    ref_entropy = video_process(ref_path, nl_method,nl_param,nl_domain,  width, height, bit_depth, gray, \
                                    ref_T, filt, num_levels, scales)
-    dist_entropy = video_process(dist_path, width, height, bit_depth, gray, \
+    dist_entropy = video_process(dist_path,nl_method,nl_param,nl_domain, width, height, bit_depth, gray, \
                                    dist_T, filt, num_levels, scales)
-    pr_entropy = video_process(pseudo_reference_name, width, height, bit_depth, gray, \
-                                   dist_T, filt, num_levels, scales)
+    if(fps!=ref_fps):
+        pr_entropy = video_process(pseudo_reference_name,nl_method,nl_param,nl_domain, width, height, bit_depth, gray, \
+                                       dist_T, filt, num_levels, scales)
     
     
     #number of valid frames
@@ -91,8 +92,11 @@ def greed_feat(args):
     #     temporal entropy difference
         for freq in range(dist_entropy['temporal_scale' + str(scale_factor)].shape[0]):
             a = dist_entropy['temporal_scale' + str(scale_factor)][freq,:,:,:]
-            b = pr_entropy['temporal_scale' + str(scale_factor)][freq,:,:,:]
             c = ref_entropy['temporal_scale' + str(scale_factor)][freq,:,:,:]
+            if(fps!=ref_fps):
+                b = pr_entropy['temporal_scale' + str(scale_factor)][freq,:,:,:]
+            else:
+                b = c
             
             ent_diff_temporal = np.abs(((1+np.abs(a - b))*(1+c)/(1+b)) - 1)
             temp_ent_frame = np.mean(np.mean(ent_diff_temporal,axis=0),axis=0)
