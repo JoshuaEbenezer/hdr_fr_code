@@ -83,7 +83,7 @@ def video_process(vid_path, nl_method, nl_param, nl_domain, width, height, bit_d
         
         spatial_sig = []
         spatial_ent = []
-        for frame_ind in range(0, T):
+        for frame_ind in range(T):
             Y,_,_ = \
             yuvRead_frame(vid_stream, width, height, \
                                   frame_ind, bit_depth, gray, sz)

@@ -3,7 +3,7 @@ from entropy.entropy_cal import video_process
 from entropy.entropy_temporal_pool import entropy_temporal_pool
 import numpy as np
 
-def greed_feat(args,nl_method,nl_param.nl_domain):
+def greed_feat(args,nl_method,nl_param,nl_domain):
     dist_path = args.dist_path
     ref_path = args.ref_path
     if (args.dist_fps!=args.ref_fps):
