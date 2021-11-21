@@ -6,12 +6,14 @@ from scipy.stats import spearmanr,pearsonr
 from scipy.optimize import curve_fit
 import glob
 
-filenames = glob.glob('./speed_features_PR/*.z')
+filenames = glob.glob('./speed_features_local_m_exp1/*.z')
 all_speed = []
 all_vspeed = []
 all_dmos = []
-score_df = pd.read_csv('/data/PV_VQA_Study/code/score_cleanup_code/lbvfr_dmos_from_raw_avg_mos.csv')
-out_folder = './speed_features_mint_mean'
+score_df = pd.read_csv('/home/josh/hdr/fall21_score_analysis/fall21_mos_and_dmos_rawavg.csv')
+out_folder = './feature_means/speed_features_local_m_exp1_mean'
+if(os.path.exists(out_folder)==False):
+    os.mkdir(out_folder)
 
 def results(all_preds,all_dmos):
     all_preds = np.asarray(all_preds)
@@ -33,18 +35,13 @@ def results(all_preds,all_dmos):
     print(preds_rmse)
     print(len(all_preds),' videos were read')
 
+upscaled_names =[v+'_upscaled' for v in score_df["video"]]
 for f in filenames:
-    if('SRC' in f):
+    if('ref' in f):
         continue
     vid_name= os.path.splitext(os.path.basename(f))[0]
-    try:
-        dmos = score_df[score_df['video']==vid_name].dmos.iloc[0]
-    except:
-        continue
-    if('SFR' in vid_name):
-        fr_file = os.path.join('./speed_features_mint',vid_name+'.z')
-    else:
-        fr_file = f
+    vid_index = upscaled_names.index(vid_name)
+    dmos = score_df["dark_dmos"].iloc[vid_index]
     outname= os.path.join(out_folder,vid_name+'.z')
     if(os.path.exists(outname)):
         X = load(outname)
@@ -57,10 +54,9 @@ for f in filenames:
         v_speed =np.mean([s[0]*s[2] for s in speed_list]) 
         X = {'speed':speed,'v_speed':v_speed}
         dump(X,outname)
-    print(vid_name,speed,v_speed)
     all_speed.append(speed)
     all_vspeed.append(v_speed)
-    dmos = score_df[score_df['video']==vid_name].dmos.iloc[0]
+
     all_dmos.append(dmos)
 
 

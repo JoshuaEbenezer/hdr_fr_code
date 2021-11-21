@@ -208,4 +208,4 @@ def single_vid_ssim(i):
     #    return
     return
 
-Parallel(n_jobs=40)(delayed(single_vid_ssim)(i) for i in range(len(upscaled_yuv_names)))
+Parallel(n_jobs=60)(delayed(single_vid_ssim)(i) for i in range(len(upscaled_yuv_names)))

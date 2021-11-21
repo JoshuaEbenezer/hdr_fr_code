@@ -309,7 +309,6 @@ def single_vid_speed(i):
 
         except Exception as e:
             print(e)
-            print(frame_num, ' frames read')
             if(len(speed_logit_lnl1_list)):
                 dump(speed_exp_lnl2_list,speed_exp_lnl2_outname)
                 dump(speed_exp_gnl1_list,speed_exp_gnl1_outname)
