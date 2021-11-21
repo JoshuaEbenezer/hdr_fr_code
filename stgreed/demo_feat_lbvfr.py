@@ -12,9 +12,6 @@ def main(args):
     
     ref_fps = args.ref_fps
     bit_depth = args.bit_depth
-    outname = os.path.join(args.outfolder,os.path.splitext(os.path.basename(args.dist_path))[0]+'.z')
-    if(os.path.exists(outname)):
-        return
     if bit_depth == 8:
         pix_format = 'yuv420p'
     else:
@@ -38,9 +35,19 @@ def main(args):
         else:
             print('pseudo reference already exists')
     
-    GREED_feat = greed_feat(args)
-    X = {'feature:':GREED_feat}
-    joblib.dump(X,outname)
+    for nl_method in ['exp','logit']:
+        for nl_param in range(1,4):
+            for domain in ['local','global']:
+                outname = os.path.join(args.outfolder,nl_method+'_'+str(nl_param)+'_'+domain,os.path.splitext(os.path.basename(args.dist_path))[0]+'.z')
+                outfeatfolder = os.path.join(args.outfolder,nl_method+'_'+str(nl_param)+'_'+domain)
+                if(os.path.exists(outfeatfolder)==False):
+                    os.mkdir(outfeatfolder)
+
+                if(os.path.exists(outname)):
+                    return
+                GREED_feat = greed_feat(args,nl_method,nl_param,domain)
+                X = {'feature:':GREED_feat}
+                joblib.dump(X,outname)
 
     print(GREED_feat)
 

@@ -7,6 +7,54 @@ import scipy.signal
 from skvideo.utils.mscn import gen_gauss_window
 import scipy.ndimage
 
+def compute_nl(Y,nl_method,nl_param,domain):
+
+    Y = Y.astype(np.float32)
+    if(domain=='global'):
+        if(nl_method=='nakarushton'):
+            Y_transform =  Y/(Y+avg_luminance) #
+        elif(nl_method=='sigmoid'):
+            Y_transform = 1/(1+(np.exp(-(1e-3*(Y-avg_luminance)))))
+        elif(nl_method=='logit'):
+            delta = nl_param 
+            Y_scaled = -0.99+1.98*(Y-np.amin(Y))/(1e-3+np.amax(Y)-np.amin(Y))
+            Y_transform = np.log((1+(Y_scaled)**delta)/(1-(Y_scaled)**delta))
+            if(delta%2==0):
+                Y_transform[Y<0] = -Y_transform[Y<0] 
+        elif(nl_method=='exp'):
+            delta = nl_param
+            Y = -4+(Y-np.amin(Y))* 8/(1e-3+np.amax(Y)-np.amin(Y))
+            Y_transform =  np.exp(np.abs(Y)**delta)-1
+            Y_transform[Y<0] = -Y_transform[Y<0]
+        elif(nl_method=='custom'):
+            Y = -0.99+(Y-np.amin(Y))* 1.98/(1e-3+np.amax(Y)-np.amin(Y))
+            Y_transform = transform(Y,5)
+    elif(domain=='local'):
+        if(nl_method=='logit'):
+            maxY = scipy.ndimage.maximum_filter(Y,size=(31,31))
+            minY = scipy.ndimage.minimum_filter(Y,size=(31,31))
+            delta = nl_param
+            Y_scaled = -0.99+1.98*(Y-minY)/(1e-3+maxY-minY)
+            Y_transform = np.log((1+(Y_scaled)**delta)/(1-(Y_scaled)**delta))
+            if(delta%2==0):
+                Y_transform[Y<0] = -Y_transform[Y<0] 
+        elif(nl_method=='exp'):
+            maxY = scipy.ndimage.maximum_filter(Y,size=(31,31))
+            minY = scipy.ndimage.minimum_filter(Y,size=(31,31))
+            delta = nl_param
+            Y = -4+(Y-minY)* 8/(1e-3+maxY-minY)
+            Y_transform =  np.exp(np.abs(Y)**delta)-1
+            Y_transform[Y<0] = -Y_transform[Y<0]
+        elif(nl_method=='custom'):
+            maxY = scipy.ndimage.maximum_filter(Y,size=(31,31))
+            minY = scipy.ndimage.minimum_filter(Y,size=(31,31))
+            Y = -0.99+(Y-minY)* 1.98/(1e-3+maxY-minY)
+            Y_transform = transform(Y,5)
+        elif(nl_method=='sigmoid'):
+            avg_luminance = scipy.ndimage.gaussian_filter(Y,sigma=7.0/6.0)
+            Y_transform = 1/(1+(np.exp(-(1e-3*(Y-avg_luminance)))))
+    return Y_transform
+
 def compute_MS_transform(image, window, extend_mode='reflect'):
     h,w = image.shape
     mu_image = np.zeros((h, w), dtype=np.float32)
@@ -14,7 +62,7 @@ def compute_MS_transform(image, window, extend_mode='reflect'):
     scipy.ndimage.correlate1d(mu_image, window, 1, mu_image, mode=extend_mode)
     return image - mu_image
 
-def video_process(vid_path, width, height, bit_depth, gray, T, filt, num_levels, scales):
+def video_process(vid_path, nl_method, nl_param, nl_domain, width, height, bit_depth, gray, T, filt, num_levels, scales):
     
     #Load WPT filters
     
@@ -35,11 +83,11 @@ def video_process(vid_path, width, height, bit_depth, gray, T, filt, num_levels,
         
         spatial_sig = []
         spatial_ent = []
-        for frame_ind in range(0, T):
-            frame_data[:,:,frame_ind],_,_ = \
+        for frame_ind in range(T):
+            Y,_,_ = \
             yuvRead_frame(vid_stream, width, height, \
                                   frame_ind, bit_depth, gray, sz)
-            
+            frame_data[:,:,frame_ind] = compute_nl(Y,nl_method,nl_param,nl_domain)
             window = gen_gauss_window((win_len-1)/2,win_len/6)
             MS_frame = compute_MS_transform(frame_data[:,:,frame_ind], window)
         
