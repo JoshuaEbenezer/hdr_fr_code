@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 import pandas as pd
 import os
 from joblib import load,dump
@@ -6,15 +7,9 @@ from scipy.stats import spearmanr,pearsonr
 from scipy.optimize import curve_fit
 import glob
 
-filenames = glob.glob('./speed_features_local_m_exp1/*.z')
-all_speed = []
-all_vspeed = []
-all_dmos = []
-score_df = pd.read_csv('/home/josh/hdr/fall21_score_analysis/fall21_mos_and_dmos_rawavg.csv')
-out_folder = './feature_means/speed_features_local_m_exp1_mean'
-if(os.path.exists(out_folder)==False):
-    os.mkdir(out_folder)
+#sys.stdout = open("speed_srcc_results.txt",'a')
 
+folders = glob.glob('./features/*')
 def results(all_preds,all_dmos):
     all_preds = np.asarray(all_preds)
     print(np.max(all_preds),np.min(all_preds))
@@ -34,32 +29,47 @@ def results(all_preds,all_dmos):
     print('RMSE:')
     print(preds_rmse)
     print(len(all_preds),' videos were read')
-
-upscaled_names =[v+'_upscaled' for v in score_df["video"]]
-for f in filenames:
-    if('ref' in f):
-        continue
-    vid_name= os.path.splitext(os.path.basename(f))[0]
-    vid_index = upscaled_names.index(vid_name)
-    dmos = score_df["dark_dmos"].iloc[vid_index]
-    outname= os.path.join(out_folder,vid_name+'.z')
-    if(os.path.exists(outname)):
-        X = load(outname)
-        speed = X['speed']
-        v_speed = X['v_speed']
-    else:
-
-        speed_list = load(f)
-        speed = np.mean([s[0] for s in speed_list])
-        v_speed =np.mean([s[0]*s[2] for s in speed_list]) 
-        X = {'speed':speed,'v_speed':v_speed}
-        dump(X,outname)
-    all_speed.append(speed)
-    all_vspeed.append(v_speed)
-
-    all_dmos.append(dmos)
+    return
+print(folders)
+for folder in folders:
+    base = os.path.basename(folder)
+    print(base)
+    filenames = glob.glob(os.path.join(folder,'*.z'))
+    all_speed = []
+    all_vspeed = []
+    all_dmos = []
+    score_df = pd.read_csv('/home/josh/hdr/fall21_score_analysis/fall21_mos_and_dmos_rawavg.csv')
+    out_folder = os.path.join('./feature_means/',base) 
+    if(os.path.exists(out_folder)==False):
+        os.mkdir(out_folder)
 
 
-results(all_speed,all_dmos)
-results(all_vspeed,all_dmos)
+    upscaled_names =[v+'_upscaled' for v in score_df["video"]]
+    for f in filenames:
+        if('ref' in f):
+            continue
+        vid_name= os.path.splitext(os.path.basename(f))[0]
+        vid_index = upscaled_names.index(vid_name)
+        dmos = score_df["dark_dmos"].iloc[vid_index]
+        outname= os.path.join(out_folder,vid_name+'.z')
+        if(os.path.exists(outname)):
+            X = load(outname)
+            speed = X['speed']
+            v_speed = X['v_speed']
+        else:
 
+            speed_list = load(f)
+            speed = np.mean([s[0] for s in speed_list])
+            v_speed =np.mean([s[0]*s[2] for s in speed_list]) 
+            X = {'speed':speed,'v_speed':v_speed}
+            dump(X,outname)
+        all_speed.append(speed)
+        all_vspeed.append(v_speed)
+
+        all_dmos.append(dmos)
+
+
+    results(all_speed,all_dmos)
+    results(all_vspeed,all_dmos)
+
+#sys.stdout.close()
