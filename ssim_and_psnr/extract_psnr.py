@@ -10,10 +10,10 @@ import skimage.util
 import math
 from hdr_utils import hdr_yuv_read
 
-csv_file = '/home/josh/hdr/qa/hdr_vmaf/python_vmaf/fall2021_yuv_rw_info.csv'
+csv_file = '/home/josh-admin/hdr/qa/hdr_vmaf/python_vmaf/fall2021_yuv_rw_info.csv'
 csv_df = pd.read_csv(csv_file)
 files = csv_df["yuv"]
-ref_files = glob.glob('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv/4k_ref_*')
+ref_files = glob.glob('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_*')
 fps_list = csv_df["fps"]
 framenos_list = csv_df["framenos"]
 upscaled_yuv_names = [x[:-4]+'_upscaled.yuv' for x in csv_df['yuv']]
@@ -77,8 +77,8 @@ def single_vid_psnr(i):
         return
     content =content_list[i] 
     fps =fps_list[i] 
-    ref_video_name = os.path.join('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
-    dis_video = open(os.path.join('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv',dis_video_name))
+    ref_video_name = os.path.join('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
+    dis_video = open(os.path.join('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv',dis_video_name))
     ref_video = open(ref_video_name)
 
     width,height=int(3840),int(2160)
@@ -159,32 +159,28 @@ def single_vid_psnr(i):
                 dump(psnr_logit_lnl1_list,psnr_logit_lnl1_outname)
                 dump(psnr_logit_lnl2_list,psnr_logit_lnl2_outname)
             break
-        try:
-            psnr_val = psnr(ref_y,dis_y)
-            psnr_exp_lnl1 = psnr(ref_y_lnl1,dis_y_lnl1)
-            psnr_exp_lnl2 = psnr(ref_y_lnl2,dis_y_lnl2)
+        psnr_val = psnr(ref_y,dis_y,data_range = 1024)
+        psnr_exp_lnl1 = psnr(ref_y_lnl1,dis_y_lnl1,data_range = 108)
+        psnr_exp_lnl2 = psnr(ref_y_lnl2,dis_y_lnl2,data_range = 17772220)
 
-            psnr_exp_gnl1 = psnr(ref_y_gnl1,dis_y_gnl1)
-            psnr_exp_gnl2 = psnr(ref_y_gnl2,dis_y_gnl2)
-            
-            psnr_logit_gnl1 = psnr(ref_y_gnl_logit1,dis_y_gnl_logit1)
-            psnr_logit_gnl2 = psnr(ref_y_gnl_logit2,dis_y_gnl_logit2)
-            
-            psnr_logit_lnl1 = psnr(ref_y_logit_lnl1,dis_y_lnl_logit1)
-            psnr_logit_lnl2 = psnr(ref_y_logit_lnl2,dis_y_lnl_logit2)
+        psnr_exp_gnl1 = psnr(ref_y_gnl1,dis_y_gnl1,data_range = 108)
+        psnr_exp_gnl2 = psnr(ref_y_gnl2,dis_y_gnl2,data_range = 17772220)
+        
+        psnr_logit_gnl1 = psnr(ref_y_gnl_logit1,dis_y_gnl_logit1,data_range = 4.6)
+        psnr_logit_gnl2 = psnr(ref_y_gnl_logit2,dis_y_gnl_logit2,data_range = 4)
+        
+        psnr_logit_lnl1 = psnr(ref_y_logit_lnl1,dis_y_lnl_logit1,data_range = 4.6)
+        psnr_logit_lnl2 = psnr(ref_y_logit_lnl2,dis_y_lnl_logit2,data_range = 4)
 
-            psnr_list.append(psnr_val)
-            psnr_exp_lnl1_list.append(psnr_exp_lnl1)
-            psnr_exp_lnl2_list.append(psnr_exp_lnl2)
-            psnr_exp_gnl1_list.append(psnr_exp_gnl1)
-            psnr_exp_gnl2_list.append(psnr_exp_gnl2)
-            psnr_logit_lnl1_list.append(psnr_logit_lnl1)
-            psnr_logit_lnl2_list.append(psnr_logit_lnl2)
-            psnr_logit_gnl1_list.append(psnr_logit_gnl1)
-            psnr_logit_gnl2_list.append(psnr_logit_gnl2)
-        except:
-            psnr_logit_lnl1_list = []
-            break
+        psnr_list.append(psnr_val)
+        psnr_exp_lnl1_list.append(psnr_exp_lnl1)
+        psnr_exp_lnl2_list.append(psnr_exp_lnl2)
+        psnr_exp_gnl1_list.append(psnr_exp_gnl1)
+        psnr_exp_gnl2_list.append(psnr_exp_gnl2)
+        psnr_logit_lnl1_list.append(psnr_logit_lnl1)
+        psnr_logit_lnl2_list.append(psnr_logit_lnl2)
+        psnr_logit_gnl1_list.append(psnr_logit_gnl1)
+        psnr_logit_gnl2_list.append(psnr_logit_gnl2)
     if(len(psnr_logit_lnl1_list)):
         dump(psnr_list,psnr_outname)
         dump(psnr_exp_lnl1_list,psnr_exp_lnl1_outname)
@@ -207,4 +203,4 @@ def single_vid_psnr(i):
     #    return
     return
 
-Parallel(n_jobs=40)(delayed(single_vid_psnr)(i) for i in range(len(upscaled_yuv_names)))
+Parallel(n_jobs=60)(delayed(single_vid_psnr)(i) for i in range(len(upscaled_yuv_names)))
