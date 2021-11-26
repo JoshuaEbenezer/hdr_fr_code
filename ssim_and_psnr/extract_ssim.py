@@ -148,7 +148,6 @@ def single_vid_ssim(i):
 
         except Exception as e:
             print(e)
-            print(frame_num, ' frames read')
             if(len(ssim_list)):
                 dump(ssim_list,ssim_outname)
                 dump(ssim_exp_lnl1_list,ssim_exp_lnl1_outname)
