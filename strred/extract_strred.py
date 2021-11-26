@@ -243,7 +243,7 @@ def y4mFileRead(filePath,width, height,startFrame):
         y = np.reshape(y1,(height,width))
         return np.expand_dims(y,2)
 
-dis_metadata_csv = pd.read_csv("/home/labuser-admin/hdr/hdr_chipqa/fall2021_yuv_rw_info.csv")
+dis_metadata_csv = pd.read_csv("/home/josh-admin/hdr/qa/hdr_chipqa/fall2021_yuv_rw_info.csv")
 print([i for i in dis_metadata_csv["yuv"]])
 framenos_list = dis_metadata_csv["framenos"]
 
@@ -253,7 +253,7 @@ def single_vid_strred(i):
     dis_basename = dis_metadata_csv['yuv'].iloc[i][:-4]+'_upscaled.yuv'
     if('ref' in dis_basename):
         return
-    dis_vid = os.path.join("/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv",dis_basename)
+    dis_vid = os.path.join("/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv",dis_basename)
     print(dis_vid)
     if(os.path.exists(dis_vid)==False):
         print('does not exist')
@@ -263,7 +263,7 @@ def single_vid_strred(i):
     content = dis_basename.split('_')[2]
     ref_basename = '4k_ref_'+content+'_upscaled.yuv'
     ref_fps = dis_fps
-    ref_filename = os.path.join("/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv/",ref_basename)
+    ref_filename = os.path.join("/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/",ref_basename)
 
     width,height=int(3840),int(2160)
     strred_outname = os.path.join('./hdr_rred_features/strred_features/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
@@ -432,6 +432,6 @@ def single_vid_strred(i):
     #    return
     return
 
-Parallel(n_jobs=30)(delayed(single_vid_strred)(i) for i in range(len(dis_metadata_csv)))
+Parallel(n_jobs=140)(delayed(single_vid_strred)(i) for i in range(len(dis_metadata_csv)))
 #for i in range(len(dis_metadata_csv)):
 #    single_vid_strred(i)
