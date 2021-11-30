@@ -35,8 +35,8 @@ def main(args):
         else:
             print('pseudo reference already exists')
     
-    for nl_method in ['exp','logit']:
-        for nl_param in range(1,4):
+    for nl_method in ['one_exp']:
+        for nl_param in [-0.5,-2,-5,0.5,2,5]:
             for domain in ['local','global']:
                 outname = os.path.join(args.outfolder,nl_method+'_'+str(nl_param)+'_'+domain,os.path.splitext(os.path.basename(args.dist_path))[0]+'.z')
                 outfeatfolder = os.path.join(args.outfolder,nl_method+'_'+str(nl_param)+'_'+domain)
