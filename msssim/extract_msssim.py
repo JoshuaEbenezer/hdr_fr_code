@@ -20,6 +20,74 @@ upscaled_yuv_names = [x[:-4]+'_upscaled.yuv' for x in csv_df['yuv']]
 content_list = [f.split('_')[2] for f in upscaled_yuv_names]
 
 
+def ssim_core(referenceVideoFrame, distortedVideoFrame, K_1, K_2, bitdepth, scaleFix, avg_window):
+
+    referenceVideoFrame = referenceVideoFrame.astype(np.float32)
+    distortedVideoFrame = distortedVideoFrame.astype(np.float32)
+
+    M, N = referenceVideoFrame.shape
+
+    extend_mode = 'constant'
+    if avg_window is None:
+      avg_window = gen_gauss_window(5, 1.5)
+    
+    L = np.int(2**bitdepth - 1)
+
+    C1 = (K_1 * L)**2
+    C2 = (K_2 * L)**2
+
+    factor = np.int(np.max((1, np.round(np.min((M, N))/256.0))))
+    factor_lpf = np.ones((factor,factor), dtype=np.float32)
+    factor_lpf /= np.sum(factor_lpf)
+
+    if scaleFix:
+      M = np.int(np.round(np.float(M) / factor + 1e-9))
+      N = np.int(np.round(np.float(N) / factor + 1e-9))
+
+    mu1 = np.zeros((M, N), dtype=np.float32)
+    mu2 = np.zeros((M, N), dtype=np.float32)
+    var1 = np.zeros((M, N), dtype=np.float32)
+    var2 = np.zeros((M, N), dtype=np.float32)
+    var12 = np.zeros((M, N), dtype=np.float32)
+
+    # scale if enabled
+    if scaleFix and (factor > 1):
+        referenceVideoFrame = scipy.signal.correlate2d(referenceVideoFrame, factor_lpf, mode='same', boundary='symm')
+        distortedVideoFrame = scipy.signal.correlate2d(distortedVideoFrame, factor_lpf, mode='same', boundary='symm')
+        referenceVideoFrame = referenceVideoFrame[::factor, ::factor]
+        distortedVideoFrame = distortedVideoFrame[::factor, ::factor]
+
+    scipy.ndimage.correlate1d(referenceVideoFrame, avg_window, 0, mu1, mode=extend_mode)
+    scipy.ndimage.correlate1d(mu1, avg_window, 1, mu1, mode=extend_mode)
+    scipy.ndimage.correlate1d(distortedVideoFrame, avg_window, 0, mu2, mode=extend_mode)
+    scipy.ndimage.correlate1d(mu2, avg_window, 1, mu2, mode=extend_mode)
+
+    mu1_sq = mu1**2
+    mu2_sq = mu2**2
+    mu1_mu2 = mu1 * mu2
+
+    scipy.ndimage.correlate1d(referenceVideoFrame**2, avg_window, 0, var1, mode=extend_mode)
+    scipy.ndimage.correlate1d(var1, avg_window, 1, var1, mode=extend_mode)
+    scipy.ndimage.correlate1d(distortedVideoFrame**2, avg_window, 0, var2, mode=extend_mode)
+    scipy.ndimage.correlate1d(var2, avg_window, 1, var2, mode=extend_mode)
+
+    scipy.ndimage.correlate1d(referenceVideoFrame * distortedVideoFrame, avg_window, 0, var12, mode=extend_mode)
+    scipy.ndimage.correlate1d(var12, avg_window, 1, var12, mode=extend_mode)
+
+    sigma1_sq = var1 - mu1_sq
+    sigma2_sq = var2 - mu2_sq
+    sigma12 = var12 - mu1_mu2
+
+    ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
+    cs_map = (2*sigma12 + C2)/(sigma1_sq + sigma2_sq + C2)
+
+    ssim_map = ssim_map[5:-5, 5:-5]
+    cs_map = cs_map[5:-5, 5:-5]
+
+    mssim = np.mean(ssim_map)
+    mcs = np.mean(cs_map)
+
+    return mssim, ssim_map, mcs, cs_map
 def msssim(frame1, frame2, method='product'):
 
     extend_mode = 'constant'
@@ -39,11 +107,7 @@ def msssim(frame1, frame2, method='product'):
     overall_mssim1 = []
     overall_mssim2 = []
     for i in range(level):
-      mssim_array, ssim_map_array, mcs_array, cs_map_array = ssim_full(im1, im2, K_1 = K_1, K_2 = K_2, avg_window = avg_window)
-      mssim_array = mssim_array[0]
-      ssim_map_array = ssim_map_array[0]
-      mcs_array = mcs_array[0]
-      cs_map_array = cs_map_array[0]
+      mssim_array, ssim_map_array, mcs_array, cs_map_array = ssim_core(im1, im2, K_1 = K_1, K_2 = K_2,bitdepth=8, scaleFix=True,avg_window = avg_window)
       filtered_im1 = scipy.ndimage.correlate1d(im1, downsample_filter, 0)
       filtered_im1 = scipy.ndimage.correlate1d(filtered_im1, downsample_filter, 1)
       filtered_im1 = filtered_im1[1:, 1:]
@@ -138,7 +202,10 @@ def single_vid_msssim(i):
     content =content_list[i] 
     fps =fps_list[i] 
     ref_video_name = os.path.join('/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
-    dis_video = open(os.path.join('/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv',dis_video_name))
+    if(os.path.exists(os.path.join('/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv',dis_video_name))):
+        dis_video = open(os.path.join('/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv',dis_video_name))
+    else:
+        dis_video = open(os.path.join('/media/labuser-admin/nebula_josh/hdr/fall2021_hdr_upscaled_yuv',dis_video_name))
     ref_video = open(ref_video_name)
 
     width,height=int(3840),int(2160)
@@ -244,7 +311,7 @@ def single_vid_msssim(i):
             # one_exp gnl
             ref_y_one_exp_gnl1a = Y_compute_gnl(ref_y,nl_method='one_exp',nl_param=0.5) 
             ref_y_one_exp_gnl2a = Y_compute_gnl(ref_y,nl_method='one_exp',nl_param=2) 
-            ref_y_one_exp_gnl2a = Y_compute_gnl(ref_y,nl_method='one_exp',nl_param=5) 
+            ref_y_one_exp_gnl3a = Y_compute_gnl(ref_y,nl_method='one_exp',nl_param=5) 
 
             ref_y_one_exp_gnl1b = Y_compute_gnl(ref_y,nl_method='one_exp',nl_param=-0.5) 
             ref_y_one_exp_gnl2b = Y_compute_gnl(ref_y,nl_method='one_exp',nl_param=-2) 
@@ -306,63 +373,59 @@ def single_vid_msssim(i):
                 dump(msssim_two_exp_lnl2_list,msssim_two_exp_lnl2_outname)
                 dump(msssim_two_exp_lnl3_list,msssim_two_exp_lnl3_outname)
             break
-        try:
-            msssim_val = msssim(ref_y,dis_y)
-            msssim_exp_lnl1 = msssim(ref_y_lnl1,dis_y_lnl1)
-            msssim_exp_lnl2 = msssim(ref_y_lnl2,dis_y_lnl2)
+        msssim_val = msssim(ref_y,dis_y)
+        msssim_exp_lnl1 = msssim(ref_y_lnl1,dis_y_lnl1)
+        msssim_exp_lnl2 = msssim(ref_y_lnl2,dis_y_lnl2)
 
-            msssim_exp_gnl1 = msssim(ref_y_gnl1,dis_y_gnl1)
-            msssim_exp_gnl2 = msssim(ref_y_gnl2,dis_y_gnl2)
-            
-            msssim_logit_gnl1 = msssim(ref_y_gnl_logit1,dis_y_gnl_logit1)
-            msssim_logit_gnl2 = msssim(ref_y_gnl_logit2,dis_y_gnl_logit2)
-            
-            msssim_logit_lnl1 = msssim(ref_y_logit_lnl1,dis_y_lnl_logit1)
-            msssim_logit_lnl2 = msssim(ref_y_logit_lnl2,dis_y_lnl_logit2)
+        msssim_exp_gnl1 = msssim(ref_y_gnl1,dis_y_gnl1)
+        msssim_exp_gnl2 = msssim(ref_y_gnl2,dis_y_gnl2)
+        
+        msssim_logit_gnl1 = msssim(ref_y_gnl_logit1,dis_y_gnl_logit1)
+        msssim_logit_gnl2 = msssim(ref_y_gnl_logit2,dis_y_gnl_logit2)
+        
+        msssim_logit_lnl1 = msssim(ref_y_logit_lnl1,dis_y_lnl_logit1)
+        msssim_logit_lnl2 = msssim(ref_y_logit_lnl2,dis_y_lnl_logit2)
 
-            msssim_one_exp_gnl1a = msssim(ref_y_gnl_one_exp1a,dis_y_gnl_one_exp1a)
-            msssim_one_exp_gnl2a = msssim(ref_y_gnl_one_exp2a,dis_y_gnl_one_exp2a)
-            msssim_one_exp_gnl3a = msssim(ref_y_gnl_one_exp3a,dis_y_gnl_one_exp3a)
-            
-            msssim_one_exp_lnl1a = msssim(ref_y_one_exp_lnl1a,dis_y_lnl_one_exp1a)
-            msssim_one_exp_lnl2a = msssim(ref_y_one_exp_lnl2a,dis_y_lnl_one_exp2a)
-            msssim_one_exp_lnl3a = msssim(ref_y_one_exp_lnl3a,dis_y_lnl_one_exp3a)
+        
+        msssim_one_exp_gnl1a = msssim(ref_y_one_exp_gnl1a,dis_y_one_exp_gnl1a)
+        msssim_one_exp_gnl2a = msssim(ref_y_one_exp_gnl2a,dis_y_one_exp_gnl2a)
+        msssim_one_exp_gnl3a = msssim(ref_y_one_exp_gnl3a,dis_y_one_exp_gnl3a)
+        msssim_one_exp_lnl1a = msssim(ref_y_one_exp_lnl1a,dis_y_one_exp_lnl1a)
+        msssim_one_exp_lnl2a = msssim(ref_y_one_exp_lnl2a,dis_y_one_exp_lnl2a)
+        msssim_one_exp_lnl3a = msssim(ref_y_one_exp_lnl3a,dis_y_one_exp_lnl3a)
 
-            msssim_one_exp_gnl1b = msssim(ref_y_gnl_one_exp1b,dis_y_gnl_one_exp1b)
-            msssim_one_exp_gnl2b = msssim(ref_y_gnl_one_exp2b,dis_y_gnl_one_exp2b)
-            msssim_one_exp_gnl3b = msssim(ref_y_gnl_one_exp3b,dis_y_gnl_one_exp3b)
-            
-            msssim_one_exp_lnl1b = msssim(ref_y_one_exp_lnl1b,dis_y_lnl_one_exp1b)
-            msssim_one_exp_lnl2b = msssim(ref_y_one_exp_lnl2b,dis_y_lnl_one_exp2b)
-            msssim_one_exp_lnl3b = msssim(ref_y_one_exp_lnl3b,dis_y_lnl_one_exp3b)
+        msssim_one_exp_gnl1b = msssim(ref_y_one_exp_gnl1b,dis_y_one_exp_gnl1b)
+        msssim_one_exp_gnl2b = msssim(ref_y_one_exp_gnl2b,dis_y_one_exp_gnl2b)
+        msssim_one_exp_gnl3b = msssim(ref_y_one_exp_gnl3b,dis_y_one_exp_gnl3b)
+        
+        msssim_one_exp_lnl1b = msssim(ref_y_one_exp_lnl1b,dis_y_one_exp_lnl1b)
+        msssim_one_exp_lnl2b = msssim(ref_y_one_exp_lnl2b,dis_y_one_exp_lnl2b)
+        msssim_one_exp_lnl3b = msssim(ref_y_one_exp_lnl3b,dis_y_one_exp_lnl3b)
 
-            msssim_two_exp_gnl1 = np.concatenate((msssim_one_exp_gnl1a,msssim_one_exp_gnl1b))
-            msssim_two_exp_gnl2 = np.concatenate((msssim_one_exp_gnl2a,msssim_one_exp_gnl2b))
-            msssim_two_exp_gnl3 = np.concatenate((msssim_one_exp_gnl3a,msssim_one_exp_gnl3b))
+        msssim_two_exp_gnl1 = np.asarray([msssim_one_exp_gnl1a,msssim_one_exp_gnl1b])
+        msssim_two_exp_gnl2 = np.asarray([msssim_one_exp_gnl2a,msssim_one_exp_gnl2b])
+        msssim_two_exp_gnl3 = np.asarray([msssim_one_exp_gnl3a,msssim_one_exp_gnl3b])
 
-            msssim_two_exp_lnl1 = np.concatenate((msssim_one_exp_lnl1a,msssim_one_exp_lnl1b))
-            msssim_two_exp_lnl2 = np.concatenate((msssim_one_exp_lnl2a,msssim_one_exp_lnl2b))
-            msssim_two_exp_lnl3 = np.concatenate((msssim_one_exp_lnl3a,msssim_one_exp_lnl3b))
+        msssim_two_exp_lnl1 = np.asarray([msssim_one_exp_lnl1a,msssim_one_exp_lnl1b])
+        msssim_two_exp_lnl2 = np.asarray([msssim_one_exp_lnl2a,msssim_one_exp_lnl2b])
+        msssim_two_exp_lnl3 = np.asarray([msssim_one_exp_lnl3a,msssim_one_exp_lnl3b])
 
-            msssim_list.append(msssim_val)
-            msssim_exp_lnl1_list.append(msssim_exp_lnl1)
-            msssim_exp_lnl2_list.append(msssim_exp_lnl2)
-            msssim_exp_gnl1_list.append(msssim_exp_gnl1)
-            msssim_exp_gnl2_list.append(msssim_exp_gnl2)
-            msssim_logit_lnl1_list.append(msssim_logit_lnl1)
-            msssim_logit_lnl2_list.append(msssim_logit_lnl2)
-            msssim_logit_gnl1_list.append(msssim_logit_gnl1)
-            msssim_logit_gnl2_list.append(msssim_logit_gnl2)
+        msssim_list.append(msssim_val)
+        msssim_exp_lnl1_list.append(msssim_exp_lnl1)
+        msssim_exp_lnl2_list.append(msssim_exp_lnl2)
+        msssim_exp_gnl1_list.append(msssim_exp_gnl1)
+        msssim_exp_gnl2_list.append(msssim_exp_gnl2)
+        msssim_logit_lnl1_list.append(msssim_logit_lnl1)
+        msssim_logit_lnl2_list.append(msssim_logit_lnl2)
+        msssim_logit_gnl1_list.append(msssim_logit_gnl1)
+        msssim_logit_gnl2_list.append(msssim_logit_gnl2)
 
-            msssim_two_exp_lnl1_list.append(msssim_two_exp_lnl1)
-            msssim_two_exp_lnl2_list.append(msssim_two_exp_lnl2)
-            msssim_two_exp_lnl3_list.append(msssim_two_exp_lnl3)
-            msssim_two_exp_gnl1_list.append(msssim_two_exp_gnl1)
-            msssim_two_exp_gnl2_list.append(msssim_two_exp_gnl2)
-            msssim_two_exp_gnl3_list.append(msssim_two_exp_gnl3)
-        except:
-            msssim_logit_lnl1_list = []
-            break
+        msssim_two_exp_lnl1_list.append(msssim_two_exp_lnl1)
+        msssim_two_exp_lnl2_list.append(msssim_two_exp_lnl2)
+        msssim_two_exp_lnl3_list.append(msssim_two_exp_lnl3)
+        msssim_two_exp_gnl1_list.append(msssim_two_exp_gnl1)
+        msssim_two_exp_gnl2_list.append(msssim_two_exp_gnl2)
+        msssim_two_exp_gnl3_list.append(msssim_two_exp_gnl3)
     if(len(msssim_logit_lnl1_list)):
         dump(msssim_list,msssim_outname)
         dump(msssim_exp_lnl1_list,msssim_exp_lnl1_outname)
