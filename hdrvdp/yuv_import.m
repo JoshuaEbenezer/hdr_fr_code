@@ -1,4 +1,4 @@
-function [Y,U,V,status]=yuv_import(filename,dims,numfrm,startfrm,yuvformat)
+function [Y,U,V,status]=yuv_import(filename,dims,startfrm,yuvformat)
 %Imports YUV sequence
 %[Y,U,V]=yuv_import(filename,dims,numfrm,startfrm)
 %
