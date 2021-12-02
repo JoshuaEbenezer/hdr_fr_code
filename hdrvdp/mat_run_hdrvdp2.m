@@ -1,8 +1,8 @@
 clear
 addpath(genpath('./hdrvdp-2.2.2'));
-video_dir = '/media/josh/nebula_josh/hdr/fall2021_hdr_upscaled_yuv';
-out_dir = './features/hdrvdp3_features/';
-T = readtable('/home/josh-admin/code/hdr_chipqa/fall2021_yuv_rw_info.csv');
+video_dir = '/media/josh/seagate/hdr_videos/fall2021_hdr_upscaled_yuv';
+out_dir = './features/hdrvdp2_features/';
+T = readtable('/home/josh/hdr/hdr_chipqa/fall2021_yuv_rw_info.csv');
 rng(0,'twister');
 
 disp(T)
@@ -37,38 +37,32 @@ for yuv_index = 1:length(ref_yuv_names)
     
     r = randi([1,framenums(yuv_index)],10,1);
     Q_mat = zeros(length(dis_names),length(r));
-    QJOD_mat = zeros(length(dis_names),length(r));
     
     for framenum_index=1:length(r)
         framenum = r(framenum_index);
-        [refY,refU,refV,status_ref] = yuv_import(full_ref_yuv_name,[width,height],framenum,'YUV420_16');
-        ref_YUV = cast(cat(3,refY,refU,refV),'uint16');
-        ref_rgb_bt2020 = ycbcr2rgbwide(ref_YUV,10);
-        ref_rgb_bt2020_linear = eotf_pq(ref_rgb_bt2020);
+        [refY,~,~,status_ref] = yuv_import(full_ref_yuv_name,[width,height],framenum,'YUV420_16');
+        refY_linear = eotf_pq(refY);
         if(status_ref==0)
             disp(strcat("Error reading frame in ",full_ref_yuv_name));
         end
         
 
-        parfor dis_index = 1:length(dis_names)
+        for dis_index = 1:length(dis_names)
 
             dis_name = char(dis_names(dis_index));
             dis_upscaled_name = strcat(dis_name(1:end-4),char('_upscaled.yuv'));
             disp(dis_upscaled_name);
 
             full_yuv_name = fullfile(video_dir,dis_upscaled_name);
-            [disY,disU,disV,status_dis] = yuv_import(full_yuv_name,[width,height],framenum,'YUV420_16');
+            [disY,~,~,status_dis] = yuv_import(full_yuv_name,[width,height],framenum,'YUV420_16');
             if(status_dis==0)
                 disp(strcat("Error reading frame in ",full_yuv_name));
             end
-            dis_YUV = cast(cat(3,disY,disU,disV),'uint16');
-            dis_rgb_bt2020 = ycbcr2rgbwide(dis_YUV,10);
-            dis_rgb_bt2020_linear = eotf_pq(dis_rgb_bt2020);
+            disY_linear = eotf_pq(disY);
             
-            vdp_result = hdrvdp3('quality',dis_rgb_bt2020_linear,ref_rgb_bt2020_linear,...
-                'rgb-native',pixels_per_degree,{'rgb_display','oled'});
+            vdp_result = hdrvdp(disY_linear,refY_linear,...
+                'luminance',pixels_per_degree,{'rgb_display','led-lcd'});
             Q_mat(dis_index,framenum) = vdp_result.Q;
-            QJOD_mat(dis_index,framenum) = vdp_result.Q_JOD;  
             
         end
     end
@@ -76,7 +70,6 @@ for yuv_index = 1:length(ref_yuv_names)
     featMap.ref_name = string(ref_yuv_names(yuv_index));
     featMap.distorted_names = string(dis_names);
     featMap.Qfeatures = Q_mat;
-    featMap.QJOD_features = QJOD_mat;
     save(outname,'featMap');
 
 end
