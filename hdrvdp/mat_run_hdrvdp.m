@@ -1,7 +1,8 @@
 clear
-video_dir = '/media/josh/nebula_josh/hdr/fall2021_hdr_upscaled_yuv';
+addpath(genpath('./hdrvdp-3.0.6'))
+video_dir = '/media/josh/seagate/hdr_videos/fall2021_hdr_upscaled_yuv';
 out_dir = './features/hdrvdp3_features/';
-T = readtable('/home/josh-admin/code/hdr_chipqa/fall2021_yuv_rw_info.csv');
+T = readtable('/home/josh/hdr/hdr_chipqa/fall2021_yuv_rw_info.csv');
 rng(0,'twister');
 
 disp(T)
@@ -65,7 +66,7 @@ for yuv_index = 1:length(ref_yuv_names)
             dis_rgb_bt2020_linear = eotf_pq(dis_rgb_bt2020);
             
             vdp_result = hdrvdp3('quality',dis_rgb_bt2020_linear,ref_rgb_bt2020_linear,...
-                'rgb-bt.2020',pixels_per_degree,{'rgb_display','oled'});
+                'rgb-native',pixels_per_degree,{'rgb_display','oled'});
             Q_mat(dis_index,framenum) = vdp_result.Q;
             QJOD_mat(dis_index,framenum) = vdp_result.Q_JOD;  
             
