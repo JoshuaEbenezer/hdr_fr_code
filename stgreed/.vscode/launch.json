@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File with my args",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": [
+                "--ref_path", "/media/josh/seagate/hdr_videos/fall2021_hdr_upscaled_yuv/4k_ref_Bonfire_upscaled.yuv",
+                "--dist_path", "/media/josh/seagate/hdr_videos/fall2021_hdr_upscaled_yuv/4k_3M_Bonfire_upscaled.yuv",
+                "--ref_fps", "60.0",
+                "--dist_fps","60.0",
+                "--height","2160",
+                "--width","3840",
+                "--bit_depth","10",
+                "--temp_filt","bior22",
+                "--outfolder","./hdr_greed_features"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Current File with UserName arg",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": ["${env:USERNAME}"],
+            "console": "integratedTerminal"
+        }
+    ]
+}

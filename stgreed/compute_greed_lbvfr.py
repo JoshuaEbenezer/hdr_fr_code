@@ -29,6 +29,6 @@ def greed_single_vid(i):
     if not (os.path.exists(dis_filename)):
         print(dis_filename,' does not exist')
     subprocess.check_call(['./run_greed.sh',orig_filename,dis_filename,orig_fps,dis_fps,str(2160),str(3840),str(10),outfolder])
-Parallel(n_jobs=150)(delayed(greed_single_vid)(i) for i in range(len(dis_metadata_csv)))
+Parallel(n_jobs=-1)(delayed(greed_single_vid)(i) for i in range(len(dis_metadata_csv)))
 #for i in range(len(dis_metadata_csv)):
 #    greed_single_vid(i)
