@@ -54,25 +54,18 @@ else
     dimsUV = dims;
 end;
 Yd = zeros(dims);
-UVd = zeros(dimsUV);
+U = zeros(dimsUV);
+V = zeros(dimsUV);
 frelem = numel(Yd) + 2*numel(UVd);
 
 ret = fseek(fid, startfrm * frelem , 0); %go to the starting frame
 if ret ~= -1
 	status = 1;
-	Y = cell(1,numfrm);
-	U = cell(1,numfrm);
-	V = cell(1,numfrm);
-	for i=1:numfrm
-	    Yd = fread(fid,dims,inprec);
-	    Y{i} = Yd';   
-	    UVd = fread(fid,dimsUV,inprec);
-	    U{i} = UVd';
-	    UVd = fread(fid,dimsUV,inprec);
-	    V{i} = UVd';    
+	Y = fread(fid,dims,inprec);
+	U = fread(fid,dimsUV,inprec);
+	V = fread(fid,dimsUV,inprec);
 
 
-	end;
 else
 	Y=0;
 	U=0;

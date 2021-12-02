@@ -15,16 +15,16 @@ for yuv_index = 1:length(yuv_names)
 	upscaled_name = strcat(yuv_name(1:end-4),char('_upscaled.yuv'))
 	disp(upscaled_name)
 	full_yuv_name = fullfile(video_dir,upscaled_name)
-	[Y,~,~,status] = yuv_import(full_yuv_name,[width,height],framenums,0,'YUV420P_16')
+	[Y,U,V,status] = yuv_import(full_yuv_name,[width,height],framenums,0,'YUV420P_16')
+	rgb_bt2020 = ycbcr2rgbwide(cat(Y,U,V,3),10)
+	rgb_bt2020_linear = eotf_inverse_pq(rgb_bt2020)
 	for i=1:framenums
-		vdp_result = hdrvdp3('quality',Y_dis_linear,Y_ref_linear,'luminance'
+		vdp_result = hdrvdp3('quality',Y_dis_linear,Y_ref_linear,'')
+
 		
 	end
 
 
-	
-
 end
 
 quit
-function res = hdrvdp3( task, test, reference, color_encoding, pixels_per_degree, options )
