@@ -49,7 +49,7 @@ for yuv_index = 1:length(ref_yuv_names)
         end
         
 
-        for dis_index = 1:length(dis_names)
+        parfor dis_index = 1:length(dis_names)
 
             dis_name = char(dis_names(dis_index));
             dis_upscaled_name = strcat(dis_name(1:end-4),char('_upscaled.yuv'));
@@ -64,15 +64,14 @@ for yuv_index = 1:length(ref_yuv_names)
             dis_rgb_bt2020 = ycbcr2rgbwide(dis_YUV,10);
             dis_rgb_bt2020_linear = eotf_pq(dis_rgb_bt2020);
             
-            tic
             vdp_result = hdrvdp3('quality',dis_rgb_bt2020_linear,ref_rgb_bt2020_linear,...
                 'rgb-bt.2020',pixels_per_degree,{'rgb_display','oled'});
-            toc
             Q_mat(dis_index,framenum) = vdp_result.Q;
-            QJOD_mat(dis_index,framenum) = vdp_result.Q_JOD;
+            QJOD_mat(dis_index,framenum) = vdp_result.Q_JOD;  
             
         end
     end
+  
     featMap.ref_name = string(ref_yuv_names(yuv_index));
     featMap.distorted_names = string(dis_names);
     featMap.Qfeatures = Q_mat;
