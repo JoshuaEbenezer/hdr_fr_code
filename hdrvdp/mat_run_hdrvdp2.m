@@ -1,4 +1,5 @@
 clear
+addpath(genpath('./hdrvdp-2.2.2'));
 video_dir = '/media/josh/nebula_josh/hdr/fall2021_hdr_upscaled_yuv';
 out_dir = './features/hdrvdp3_features/';
 T = readtable('/home/josh-admin/code/hdr_chipqa/fall2021_yuv_rw_info.csv');
