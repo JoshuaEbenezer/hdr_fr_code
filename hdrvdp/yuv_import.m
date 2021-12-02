@@ -1,10 +1,10 @@
-function [Y,U,V,status]=yuv_import(filename,dims,startfrm,yuvformat)
+function [Y,U,V,status]=yuv_import(filename,dims_2d,startfrm,yuvformat)
 %Imports YUV sequence
 %[Y,U,V]=yuv_import(filename,dims,numfrm,startfrm)
 %
 %Input:
 % filename - YUV sequence file
-% dims - dimensions of the frame [width height]
+% dims_2d - dimensions of the frame [width height]
 % numfrm - number of frames to read
 % startfrm - [optional, default = 0] specifies from which frame to start reading
 %            with the convention that the first frame of the sequence is 0-
@@ -31,41 +31,40 @@ function [Y,U,V,status]=yuv_import(filename,dims,startfrm,yuvformat)
 fid=fopen(filename,'r');
 if (fid < 0) 
     error('File does not exist!');
-end;
+end
 
-inprec = 'ubit8';
 sampl = 420;
-if (nargin < 4)
-    startfrm = 0;
-end;
-if (nargin < 5)
-    yuvformat = 'YUV420_8';
-end;
+
 
 if (strcmp(yuvformat,'YUV420_16'))
     inprec = 'uint16'; %'ubit16=>uint16'
 elseif (strcmp(yuvformat,'YUV444_8'))
     sampl = 444;
-end;
+end
+
+dims = dims_2d(1)*dims_2d(2);
 
 if (sampl == 420)
-    dimsUV = dims / 2;
+    dimsUV_2d = dims_2d/2;
+    dimsUV = dims / 4;
 else
     dimsUV = dims;
-end;
-Yd = zeros(dims);
-U = zeros(dimsUV);
-V = zeros(dimsUV);
-frelem = numel(Yd) + 2*numel(UVd);
+end
 
-ret = fseek(fid, startfrm * frelem , 0); %go to the starting frame
+frelem = dims + 2*dimsUV;
+
+ret = fseek(fid, (startfrm-1) * frelem , 0); %go to the starting frame
 if ret ~= -1
 	status = 1;
-	Y = fread(fid,dims,inprec);
-	U = fread(fid,dimsUV,inprec);
-	V = fread(fid,dimsUV,inprec);
-
-
+	Y1d = fread(fid,dims,inprec);
+	U1d = fread(fid,dimsUV,inprec);
+	V1d = fread(fid,dimsUV,inprec);
+    Y = reshape(Y1d,dims_2d(1),dims_2d(2))';
+    U_half = reshape(U1d,[dimsUV_2d(1),dimsUV_2d(2)]);
+    V_half = reshape(V1d,[dimsUV_2d(1),dimsUV_2d(2)]);
+    U = imresize(U_half,2,'method','nearest')';
+    V = imresize(V_half,2,'method','nearest')';
+    
 else
 	Y=0;
 	U=0;

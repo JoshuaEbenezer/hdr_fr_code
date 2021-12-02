@@ -1,6 +1,6 @@
 function [rgb_linear] = eotf_pq(rgb_pq)
 %eotf_pq  SMPTE 2084 EOTF
-
+rgb_pq = cast(rgb_pq,'double');
 rgb_pq =rgb_pq/1023;
 m1 = 1305/8192;
 m2 = 2523/32;
