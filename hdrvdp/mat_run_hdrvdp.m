@@ -1,7 +1,8 @@
 clear
-video_dir = '/media/josh/nebula_josh/hdr/fall2021_hdr_upscaled_yuv';
+addpath(genpath('./hdrvdp-3.0.6'))
+video_dir = '/media/josh/seagate/hdr_videos/fall2021_hdr_upscaled_yuv';
 out_dir = './features/hdrvdp3_features/';
-T = readtable('/home/josh-admin/code/hdr_chipqa/fall2021_yuv_rw_info.csv');
+T = readtable('/home/josh/hdr/hdr_chipqa/fall2021_yuv_rw_info.csv');
 rng(0,'twister');
 
 disp(T)
