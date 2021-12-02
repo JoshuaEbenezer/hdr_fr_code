@@ -11,7 +11,11 @@ def compute_nl(Y,nl_method,nl_param,domain):
 
     Y = Y.astype(np.float32)
     if(domain=='global'):
-        if(nl_method=='nakarushton'):
+        
+        if(nl_method=='one_exp'):
+            avg = np.average(Y)
+            Y_transform = np.exp(nl_param*(Y-avg))
+        elif(nl_method=='nakarushton'):
             Y_transform =  Y/(Y+avg_luminance) #
         elif(nl_method=='sigmoid'):
             Y_transform = 1/(1+(np.exp(-(1e-3*(Y-avg_luminance)))))
@@ -30,7 +34,16 @@ def compute_nl(Y,nl_method,nl_param,domain):
             Y = -0.99+(Y-np.amin(Y))* 1.98/(1e-3+np.amax(Y)-np.amin(Y))
             Y_transform = transform(Y,5)
     elif(domain=='local'):
-        if(nl_method=='logit'):
+        if(nl_method=='one_exp'):
+            h, w = np.shape(Y)
+            avg_window = gen_gauss_window(31//2, 7.0/6.0)
+            mu_image = np.zeros((h, w), dtype=np.float32)
+            Y= np.array(Y).astype('float32')
+            scipy.ndimage.correlate1d(Y, avg_window, 0, mu_image, mode='constant')
+            scipy.ndimage.correlate1d(mu_image, avg_window, 1, mu_image, mode='constant')
+            Y_transform = np.exp(nl_param*(image - mu_image))
+
+        elif(nl_method=='logit'):
             maxY = scipy.ndimage.maximum_filter(Y,size=(31,31))
             minY = scipy.ndimage.minimum_filter(Y,size=(31,31))
             delta = nl_param
