@@ -13,6 +13,7 @@ def compute_nl(Y,nl_method,nl_param,domain):
     if(domain=='global'):
         
         if(nl_method=='one_exp'):
+            Y = Y/1023.0
             avg = np.average(Y)
             Y_transform = np.exp(nl_param*(Y-avg))
         elif(nl_method=='nakarushton'):
@@ -35,13 +36,14 @@ def compute_nl(Y,nl_method,nl_param,domain):
             Y_transform = transform(Y,5)
     elif(domain=='local'):
         if(nl_method=='one_exp'):
+            Y = Y/1023.0
             h, w = np.shape(Y)
             avg_window = gen_gauss_window(31//2, 7.0/6.0)
             mu_image = np.zeros((h, w), dtype=np.float32)
             Y= np.array(Y).astype('float32')
             scipy.ndimage.correlate1d(Y, avg_window, 0, mu_image, mode='constant')
             scipy.ndimage.correlate1d(mu_image, avg_window, 1, mu_image, mode='constant')
-            Y_transform = np.exp(nl_param*(image - mu_image))
+            Y_transform = np.exp(nl_param*(Y - mu_image))
 
         elif(nl_method=='logit'):
             maxY = scipy.ndimage.maximum_filter(Y,size=(31,31))

@@ -432,6 +432,6 @@ def single_vid_strred(i):
     #    return
     return
 
-Parallel(n_jobs=140)(delayed(single_vid_strred)(i) for i in range(len(dis_metadata_csv)))
+Parallel(n_jobs=30)(delayed(single_vid_strred)(i) for i in range(len(dis_metadata_csv)))
 #for i in range(len(dis_metadata_csv)):
 #    single_vid_strred(i)
