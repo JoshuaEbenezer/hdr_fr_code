@@ -271,7 +271,7 @@ def y4mFileRead(filePath,width, height,startFrame):
         y = np.reshape(y1,(height,width))
         return np.expand_dims(y,2)
 
-dis_metadata_csv = pd.read_csv("/home/josh-admin/hdr/qa/hdr_chipqa/fall2021_yuv_rw_info.csv")
+dis_metadata_csv = pd.read_csv("/home/josh/hdr/qa/hdr_chipqa/fall2021_yuv_rw_info.csv")
 print([i for i in dis_metadata_csv["yuv"]])
 framenos_list = dis_metadata_csv["framenos"]
 
@@ -281,7 +281,7 @@ def single_vid_strred(i):
     dis_basename = dis_metadata_csv['yuv'].iloc[i][:-4]+'_upscaled.yuv'
     if('ref' in dis_basename):
         return
-    dis_vid = os.path.join("/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv",dis_basename)
+    dis_vid = os.path.join("/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv",dis_basename)
     print(dis_vid)
     if(os.path.exists(dis_vid)==False):
         print('does not exist')
@@ -291,7 +291,7 @@ def single_vid_strred(i):
     content = dis_basename.split('_')[2]
     ref_basename = '4k_ref_'+content+'_upscaled.yuv'
     ref_fps = dis_fps
-    ref_filename = os.path.join("/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/",ref_basename)
+    ref_filename = os.path.join("/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv/",ref_basename)
 
     width,height=int(3840),int(2160)
 
@@ -299,9 +299,9 @@ def single_vid_strred(i):
     strred_two_exp_lnl2_outname = os.path.join('./hdr_rred_features/strred_features_local_two_exp2/',os.path.splitext(os.path.basename(dis_basename))[0]+'.z')
     strred_two_exp_lnl3_outname = os.path.join('./hdr_rred_features/strred_features_local_two_exp3/',os.path.splitext(os.path.basename(dis_basename))[0]+'.z')
 
-    strred_two_exp_gnl1_outname = os.path.join('./hdr_rred_features/strred_features_local_two_exp1/',os.path.splitext(os.path.basename(dis_basename))[0]+'.z')
-    strred_two_exp_gnl2_outname = os.path.join('./hdr_rred_features/strred_features_local_two_exp2/',os.path.splitext(os.path.basename(dis_basename))[0]+'.z')
-    strred_two_exp_gnl3_outname = os.path.join('./hdr_rred_features/strred_features_local_two_exp3/',os.path.splitext(os.path.basename(dis_basename))[0]+'.z')
+    strred_two_exp_gnl1_outname = os.path.join('./hdr_rred_features/strred_features_global_two_exp1/',os.path.splitext(os.path.basename(dis_basename))[0]+'.z')
+    strred_two_exp_gnl2_outname = os.path.join('./hdr_rred_features/strred_features_global_two_exp2/',os.path.splitext(os.path.basename(dis_basename))[0]+'.z')
+    strred_two_exp_gnl3_outname = os.path.join('./hdr_rred_features/strred_features_global_two_exp3/',os.path.splitext(os.path.basename(dis_basename))[0]+'.z')
 
     strred_two_exp_lnl1_list = []
     strred_two_exp_lnl2_list = []
@@ -415,13 +415,13 @@ def single_vid_strred(i):
             strred_two_exp_gnl2b = compute_strred(ref_y_two_exp_gnl2b,ref_y_gnl_two_exp2_nextb,dis_y_two_exp_gnl2b,dis_y_gnl_two_exp2_nextb)
             strred_two_exp_gnl3b = compute_strred(ref_y_two_exp_gnl3b,ref_y_gnl_two_exp3_nextb,dis_y_two_exp_gnl3b,dis_y_gnl_two_exp3_nextb)
 
-            strred_two_exp_lnl1_list.append(np.concatenate((strred_two_exp_lnl1a,strred_two_exp_lnl1b)))
-            strred_two_exp_lnl2_list.append(np.concatenate((strred_two_exp_lnl2a,strred_two_exp_lnl2b)))
-            strred_two_exp_lnl3_list.append(np.concatenate((strred_two_exp_lnl3a,strred_two_exp_lnl3b)))
+            strred_two_exp_lnl1_list.append(np.asarray([strred_two_exp_lnl1a,strred_two_exp_lnl1b]))
+            strred_two_exp_lnl2_list.append(np.asarray([strred_two_exp_lnl2a,strred_two_exp_lnl2b]))
+            strred_two_exp_lnl3_list.append(np.asarray([strred_two_exp_lnl3a,strred_two_exp_lnl3b]))
 
-            strred_two_exp_gnl1_list.append(np.concatenate((strred_two_exp_gnl1a,strred_two_exp_gnl1b)))
-            strred_two_exp_gnl2_list.append(np.concatenate((strred_two_exp_gnl2a,strred_two_exp_gnl2b)))
-            strred_two_exp_gnl3_list.append(np.concatenate((strred_two_exp_gnl3a,strred_two_exp_gnl3b)))
+            strred_two_exp_gnl1_list.append(np.asarray([strred_two_exp_gnl1a,strred_two_exp_gnl1b]))
+            strred_two_exp_gnl2_list.append(np.asarray([strred_two_exp_gnl2a,strred_two_exp_gnl2b]))
+            strred_two_exp_gnl3_list.append(np.asarray([strred_two_exp_gnl3a,strred_two_exp_gnl3b]))
 
             ref_y = ref_y_next
             ref_y_two_exp_lnl1a,ref_y_two_exp_lnl1b  =  ref_y_lnl_two_exp1_nexta,ref_y_lnl_two_exp1_nextb
@@ -477,6 +477,6 @@ def single_vid_strred(i):
     #    return
     return
 
-Parallel(n_jobs=10)(delayed(single_vid_strred)(i) for i in range(len(dis_metadata_csv)))
+Parallel(n_jobs=60)(delayed(single_vid_strred)(i) for i in range(len(dis_metadata_csv)))
 #for i in range(len(dis_metadata_csv)):
 #    single_vid_strred(i)
