@@ -225,7 +225,7 @@ def single_vid_psnr(i):
         psnr_exp_gnl2_list.append([psnr_exp_gnl2a, psnr_exp_gnl2b])
         psnr_exp_gnl3_list.append([psnr_exp_gnl3a, psnr_exp_gnl3b])
 
-    if(len(psnr_logit_lnl1_list)):
+    if(len(psnr_exp_lnl1_list)):
 
         dump(psnr_exp_lnl1_list,psnr_exp_lnl1_outname)
         dump(psnr_exp_lnl2_list,psnr_exp_lnl2_outname)
