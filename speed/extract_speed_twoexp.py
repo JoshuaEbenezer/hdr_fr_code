@@ -10,10 +10,10 @@ import skimage.util
 import math
 from hdr_utils import hdr_yuv_read
 
-csv_file = '/home/josh-admin/hdr/qa/hdr_vmaf/python_vmaf/fall2021_yuv_rw_info.csv'
+csv_file = '/home/josh/hdr/qa/hdr_vmaf/python_vmaf/fall2021_yuv_rw_info.csv'
 csv_df = pd.read_csv(csv_file)
 files = csv_df["yuv"]
-ref_files = glob.glob('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_*')
+ref_files = glob.glob('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv/4k_ref_*')
 fps_list = csv_df["fps"]
 framenos_list = csv_df["framenos"]
 upscaled_yuv_names = [x[:-4]+'_upscaled.yuv' for x in csv_df['yuv']]
@@ -228,8 +228,8 @@ def single_vid_speed(i):
         return
     content =content_list[i] 
     fps =fps_list[i] 
-    ref_video_name = os.path.join('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
-    dis_video = open(os.path.join('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv',dis_video_name))
+    ref_video_name = os.path.join('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
+    dis_video = open(os.path.join('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv',dis_video_name))
 
     ref_video = open(ref_video_name)
 
@@ -316,6 +316,8 @@ def single_vid_speed(i):
             ref_y_gnl_two_exp2_nexta,ref_y_gnl_two_exp2_nextb  = Y_compute_gnl(ref_y_next,nl_method='two_exp',nl_param=2) 
             ref_y_gnl_two_exp3_nexta,ref_y_gnl_two_exp3_nextb  = Y_compute_gnl(ref_y_next,nl_method='two_exp',nl_param=5) 
 
+            del ref_y_next
+
             dis_y_next,_,_ = hdr_yuv_read(dis_video,framenum+1,height,width) 
             dis_y_next = dis_y_next/1023.0
 #            # two exp lnl
@@ -329,6 +331,7 @@ def single_vid_speed(i):
             dis_y_gnl_two_exp2_nexta,dis_y_gnl_two_exp2_nextb  = Y_compute_gnl(dis_y_next,nl_method='two_exp',nl_param=2) 
             dis_y_gnl_two_exp3_nexta,dis_y_gnl_two_exp3_nextb  = Y_compute_gnl(dis_y_next,nl_method='two_exp',nl_param=5) 
 
+            del dis_y_next
 
 #
 #            print('distorted vid stats')
@@ -372,7 +375,6 @@ def single_vid_speed(i):
             speed_two_exp_gnl2_list.append(np.concatenate((speed_two_exp_gnl2a,speed_two_exp_gnl2b)))
             speed_two_exp_gnl3_list.append(np.concatenate((speed_two_exp_gnl3a,speed_two_exp_gnl3b)))
 
-            ref_y = ref_y_next
             ref_y_two_exp_lnl1a,ref_y_two_exp_lnl1b  =  ref_y_lnl_two_exp1_nexta,ref_y_lnl_two_exp1_nextb
             ref_y_two_exp_lnl2a,ref_y_two_exp_lnl2b  =  ref_y_lnl_two_exp2_nexta,ref_y_lnl_two_exp2_nextb
             ref_y_two_exp_lnl3a,ref_y_two_exp_lnl3b  =  ref_y_lnl_two_exp3_nexta,ref_y_lnl_two_exp3_nextb
@@ -431,5 +433,5 @@ def single_vid_speed(i):
     #    return
     return
 
-single_vid_speed(40)
-#Parallel(n_jobs=1)(delayed(single_vid_speed)(i) for i in range(len(upscaled_yuv_names)))
+#single_vid_speed(40)
+Parallel(n_jobs=10)(delayed(single_vid_speed)(i) for i in range(len(upscaled_yuv_names)))

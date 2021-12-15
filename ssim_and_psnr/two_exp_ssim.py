@@ -225,7 +225,7 @@ def single_vid_ssim(i):
         ssim_exp_gnl2_list.append([ssim_exp_gnl2a, ssim_exp_gnl2b])
         ssim_exp_gnl3_list.append([ssim_exp_gnl3a, ssim_exp_gnl3b])
 
-    if(len(ssim_logit_lnl1_list)):
+    if(len(ssim_exp_lnl1_list)):
 
         dump(ssim_exp_lnl1_list,ssim_exp_lnl1_outname)
         dump(ssim_exp_lnl2_list,ssim_exp_lnl2_outname)
@@ -238,12 +238,12 @@ def single_vid_ssim(i):
 
 
 
-    #ssim_command = ['./run_ssim.sh',ref_video,dis_vid,ssim_outname,dis_fps]
-    #try:
-    #subprocess.check_call(ssim_command)
-    #subprocess.check_call(ssim_command)
-    #except:
-    #    return
+#    #ssim_command = ['./run_ssim.sh',ref_video,dis_vid,ssim_outname,dis_fps]
+#    #try:
+#    #subprocess.check_call(ssim_command)
+#    #subprocess.check_call(ssim_command)
+#    #except:
+#    #    return
     return
 
 Parallel(n_jobs=60)(delayed(single_vid_ssim)(i) for i in range(len(upscaled_yuv_names)))
