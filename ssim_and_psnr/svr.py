@@ -54,7 +54,7 @@ def results(all_preds,all_dmos):
 
 
 
-scores_df = pd.read_csv('/home/josh/hdr/fall21_score_analysis/sureal_dark_mos_and_dmos.csv')
+scores_df = pd.read_csv('/Users/joshua/code/hdr/fall21_score_analysis/sureal_dark_mos_and_dmos.csv')
 video_names = scores_df['video']
 scores_df['content'] = [v.split('_')[2] for v in list(video_names)]
 scores = scores_df['dark_dmos']
@@ -88,8 +88,7 @@ def trainval_split(trainval_content,r):
 #        feature2_list = load(os.path.join(feature_folder2,featfile_name))
 #        feature2 = np.mean(feature2_list)
 
-        feature = np.reshape(feature1,(-1,1))
-        print(feature.shape)
+        feature = np.reshape(feature1,(1,))
 #        feature = np.stack((feature1,feature2),axis=0)
         feature = np.nan_to_num(feature)
 #        if(np.isnan(feature).any()):
@@ -186,7 +185,7 @@ def only_test(r):
 #srocc_list = train_test(0) 
 
 #print(srocc_list)
-srocc_list = Parallel(n_jobs=-1,verbose=0)(delayed(train_test)(i) for i in range(100))
+srocc_list = Parallel(n_jobs=-1,verbose=0)(delayed(train_test)(i) for i in range(10))
 ##srocc_list = np.nan_to_num(srocc_list)
 print("median srocc is")
 print(np.median([s[0] for s in srocc_list]))
