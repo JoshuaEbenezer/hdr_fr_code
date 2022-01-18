@@ -21,7 +21,7 @@ def results(all_preds,all_dmos):
     preds_fitted = b0 * (0.5 - 1.0/(1 + np.exp(b1*(all_preds - b2))) + b3 * all_preds+ b4)
     preds_srocc = spearmanr(preds_fitted,all_dmos)
     preds_lcc = pearsonr(preds_fitted,all_dmos)
-    preds_rmse = np.sqrt(np.mean(preds_fitted-all_dmos)**2)
+    preds_rmse = np.sqrt(np.mean((preds_fitted-all_dmos)**2))
     print('SROCC:')
     print(preds_srocc[0])
     print('LCC:')

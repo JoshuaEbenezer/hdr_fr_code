@@ -88,8 +88,7 @@ def trainval_split(trainval_content,r):
 #        feature2_list = load(os.path.join(feature_folder2,featfile_name))
 #        feature2 = np.mean(feature2_list)
 
-        feature = np.reshape(feature1,(-1,1))
-        print(feature.shape)
+        feature = np.reshape(feature1,(1,))
 #        feature = np.stack((feature1,feature2),axis=0)
         feature = np.nan_to_num(feature)
 #        if(np.isnan(feature).any()):

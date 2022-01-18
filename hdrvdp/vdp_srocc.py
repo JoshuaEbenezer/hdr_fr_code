@@ -10,7 +10,7 @@ import glob
 
 #sys.stdout = open("vdp_srcc_results.txt",'a')
 
-feature_files= glob.glob('./hdrvdp3_sep_features/*')
+feature_files= glob.glob('./hdrvdp2_sep_features/*')
 def results(all_preds,all_dmos):
     all_preds = np.asarray(all_preds)
     print(np.max(all_preds),np.min(all_preds))
@@ -22,7 +22,7 @@ def results(all_preds,all_dmos):
     preds_fitted = b0 * (0.5 - 1.0/(1 + np.exp(b1*(all_preds - b2))) + b3 * all_preds+ b4)
     preds_srocc = spearmanr(preds_fitted,all_dmos)
     preds_lcc = pearsonr(preds_fitted,all_dmos)
-    preds_rmse = np.sqrt(np.mean(preds_fitted-all_dmos)**2)
+    preds_rmse = np.sqrt(np.mean((preds_fitted-all_dmos)**2))
     print('SROCC:')
     print(preds_srocc[0])
     print('LCC:')
