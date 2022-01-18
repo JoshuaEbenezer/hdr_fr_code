@@ -38,7 +38,7 @@ for folder in folders:
     all_speed = []
     all_vspeed = []
     all_dmos = []
-    score_df = pd.read_csv('/home/josh/hdr/fall21_score_analysis/fall21_mos_and_dmos_rawavg.csv')
+    score_df = pd.read_csv('/Users/joshua/code/hdr/fall21_score_analysis/fall21_mos_and_dmos_rawavg.csv')
     out_folder = os.path.join('./feature_means/',base) 
     if(os.path.exists(out_folder)==False):
         os.mkdir(out_folder)

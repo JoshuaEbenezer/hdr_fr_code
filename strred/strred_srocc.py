@@ -1,16 +1,15 @@
 import numpy as np
+import sys
 import pandas as pd
 import os
-from joblib import load
+from joblib import load,dump
 from scipy.stats import spearmanr,pearsonr
 from scipy.optimize import curve_fit
 import glob
 
-filenames = glob.glob('./strred_features_PR/*.z')
-all_strred = []
-all_dmos = []
-score_df = pd.read_csv('/data/PV_VQA_Study/code/score_cleanup_code/lbvfr_dmos_from_raw_avg_mos.csv')
+#sys.stdout = open("strred_srcc_results.txt",'a')
 
+folders = ['./hdr_rred_features/strred_features']
 def results(all_preds,all_dmos):
     all_preds = np.asarray(all_preds)
     print(np.max(all_preds),np.min(all_preds))
@@ -30,25 +29,32 @@ def results(all_preds,all_dmos):
     print('RMSE:')
     print(preds_rmse)
     print(len(all_preds),' videos were read')
+    return
+print(folders)
+for folder in folders:
+    base = os.path.basename(folder)
+    print(base)
+    filenames = glob.glob(os.path.join(folder,'*.z'))
+    all_strred = []
+    all_dmos = []
+    score_df = pd.read_csv('/Users/joshua/code/hdr/fall21_score_analysis/fall21_mos_and_dmos_rawavg.csv')
 
-for f in filenames:
-    if('SRC' in f):
-        continue
-    vid_name= os.path.splitext(os.path.basename(f))[0]
-    try:
-        dmos = score_df[score_df['video']==vid_name].dmos.iloc[0]
-    except:
-        continue
-    if('SFR' in vid_name):
-        fr_file = os.path.join('./strred_features_mint',vid_name+'.z')
-    else:
-        fr_file = f
-    strred_list = load(fr_file)
-    strred = np.mean(strred_list)
-    print(vid_name,strred,len(strred_list))
-    all_strred.append(strred)
-    dmos = score_df[score_df['video']==vid_name].dmos.iloc[0]
-    all_dmos.append(dmos)
 
-results(all_strred,all_dmos)
-print(len(all_dmos))
+    upscaled_names =[v+'_upscaled' for v in score_df["video"]]
+    for f in filenames:
+        if('ref' in f):
+            continue
+        vid_name= os.path.splitext(os.path.basename(f))[0]
+        vid_index = upscaled_names.index(vid_name)
+        dmos = score_df["dark_dmos"].iloc[vid_index]
+
+        strred_list = load(f)
+        strred = np.mean([s for s in strred_list])
+        all_strred.append(strred)
+
+        all_dmos.append(dmos)
+
+
+    results(all_strred,all_dmos)
+
+#sys.stdout.close()

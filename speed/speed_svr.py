@@ -54,7 +54,7 @@ def results(all_preds,all_dmos):
 
 
 
-scores_df = pd.read_csv('/home/josh/hdr/fall21_score_analysis/sureal_dark_mos_and_dmos.csv')
+scores_df = pd.read_csv('/Users/joshua/code/hdr/fall21_score_analysis/sureal_dark_mos_and_dmos.csv')
 video_names = scores_df['video']
 scores_df['content'] = [v.split('_')[2] for v in list(video_names)]
 scores = scores_df['dark_dmos']
@@ -84,15 +84,16 @@ def trainval_split(trainval_content,r):
         score = scores[i]
 
         try:
-            feature1_list = load(os.path.join(feature_folder,featfile_name))
-        except:
+#            feature1_list = load(os.path.join(feature_folder,featfile_name))
+            feature1 = np.mean(load(os.path.join(feature_folder,featfile_name)))
+        except Exception as e:
+            #print(e)
             continue
-        feature1 = np.mean(feature1_list)
-        feature2_list = load(os.path.join(feature_folder2,featfile_name))
-        feature2 = np.mean(feature2_list)
+#        feature1 = np.mean(feature1_list)
+#        feature2_list = load(os.path.join(feature_folder2,featfile_name))
+        feature2 = np.mean(load(os.path.join(feature_folder2,featfile_name)))
 
 #        feature = np.reshape(feature1,(-1,1))
-#        feature = np.reshape(feature1,(1,))
         feature = np.stack((feature1,feature2),axis=0)
         feature = np.nan_to_num(feature)
 #        if(np.isnan(feature).any()):
@@ -120,7 +121,14 @@ def single_split(trainval_content,cv_index,gamma,C):
     scaler = preprocessing.StandardScaler()
     #scaler = StandardScaler()()
     X_train = scaler.fit_transform(train_features)
+    del train_features
+
+
+
     X_test = scaler.transform(val_features)
+    
+    del val_features
+    
     clf.fit(X_train,train_scores)
     return clf.score(X_test,val_scores)
 def grid_search(gamma_list,C_list,trainval_content):
@@ -129,7 +137,10 @@ def grid_search(gamma_list,C_list,trainval_content):
     best_gamma = gamma_list[0]
     for gamma in gamma_list:
         for C in C_list:
-            cv_score = Parallel(n_jobs=-1)(delayed(single_split)(trainval_content,cv_index,gamma,C) for cv_index in range(5))
+#            cv_score = []
+#            for cv_index in range(5):
+#                cv_score.append(single_split(trainval_content,cv_index,gamma,C))
+            cv_score = Parallel(n_jobs=5)(delayed(single_split)(trainval_content,cv_index,gamma,C) for cv_index in range(5))
             avg_cv_score = np.average(cv_score)
             if(avg_cv_score>best_score):
                 best_score = avg_cv_score
@@ -138,8 +149,9 @@ def grid_search(gamma_list,C_list,trainval_content):
     return best_C,best_gamma
 
 def train_test(r):
-    train_features,train_scores,test_features,test_scores,trainval_content = trainval_split(scores_df['content'].unique(),r)
+    trainval_content,_= train_test_split(scores_df['content'].unique(),test_size=0.2,random_state=r)
     best_C,best_gamma = grid_search(np.logspace(-7,2,5),np.logspace(1,10,5,base=2),trainval_content)
+    train_features,train_scores,test_features,test_scores,trainval_content = trainval_split(scores_df['content'].unique(),r)
 
     scaler = preprocessing.StandardScaler()  
     scaler.fit(train_features)
