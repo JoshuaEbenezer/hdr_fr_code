@@ -17,7 +17,7 @@ def results(all_preds,all_dmos):
     preds_fitted = b0 * (0.5 - 1.0/(1 + np.exp(b1*(all_preds - b2))) + b3 * all_preds+ b4)
     preds_srocc = spearmanr(preds_fitted,all_dmos)
     preds_lcc = pearsonr(preds_fitted,all_dmos)
-    preds_rmse = np.sqrt(np.mean(preds_fitted-all_dmos)**2)
+    preds_rmse = np.sqrt(np.mean((preds_fitted-all_dmos)**2))
     print('SROCC:')
     print(preds_srocc[0])
     print('LCC:')
@@ -31,7 +31,7 @@ feature_folders = ['./features/msssim_features/']#   glob.glob(os.path.join('./f
 for folder in feature_folders:
     print(os.path.basename(folder))
     filenames = glob.glob(os.path.join(folder,'*.z'))
-    score_df = pd.read_csv('/Users/joshua/code/hdr/fall21_score_analysis/sureal_dark_mos_and_dmos.csv')
+    score_df = pd.read_csv('/home/josh/hdr/fall21_score_analysis/sureal_dark_mos_and_dmos.csv')
 
 
     all_psnr = []

@@ -1,0 +1,3 @@
+[submodule "HDR-VQM"]
+	path = HDR-VQM
+	url = https://github.com/mperreir/HDR-VQM.git

@@ -37,7 +37,7 @@ for folder in folders:
     filenames = glob.glob(os.path.join(folder,'*.z'))
     all_strred = []
     all_dmos = []
-    score_df = pd.read_csv('/Users/joshua/code/hdr/fall21_score_analysis/fall21_mos_and_dmos_rawavg.csv')
+    score_df = pd.read_csv('/home/josh/hdr/fall21_score_analysis/sureal_dark_mos_and_dmos.csv')
 
 
     upscaled_names =[v+'_upscaled' for v in score_df["video"]]
