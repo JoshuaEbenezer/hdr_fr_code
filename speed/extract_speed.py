@@ -9,10 +9,10 @@ import skimage.util
 import math
 from hdr_utils import hdr_yuv_read
 
-csv_file = '/home/josh/hdr/qa/hdr_vmaf/python_vmaf/fall2021_yuv_rw_info.csv'
+csv_file = '/home/josh-admin/hdr/qa/hdr_vmaf/python_vmaf/fall2021_yuv_rw_info.csv'
 csv_df = pd.read_csv(csv_file)
 files = csv_df["yuv"]
-ref_files = glob.glob('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv/4k_ref_*')
+ref_files = glob.glob('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_*')
 fps_list = csv_df["fps"]
 framenos_list = csv_df["framenos"]
 upscaled_yuv_names = [x[:-4]+'_upscaled.yuv' for x in csv_df['yuv']]
@@ -212,19 +212,20 @@ def single_vid_speed(i):
         return
     content =content_list[i] 
     fps =fps_list[i] 
-    ref_video_name = os.path.join('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
-    dis_video = open(os.path.join('/mnt/7e60dcd9-907d-428e-970c-b7acf5c8636a/fall2021_hdr_upscaled_yuv',dis_video_name))
+    ref_video_name = os.path.join('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
+    dis_video = open(os.path.join('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv',dis_video_name))
     ref_video = open(ref_video_name)
 
     width,height=int(3840),int(2160)
-    speed_exp_gnl1_outname = os.path.join('./speed_features_global_m_exp1/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_exp_gnl2_outname = os.path.join('./speed_features_global_m_exp2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_exp_lnl2_outname = os.path.join('./speed_features_local_m_exp2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_logit_gnl1_outname = os.path.join('./speed_features_global_logit1/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_logit_gnl2_outname = os.path.join('./speed_features_global_logit2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_logit_lnl1_outname = os.path.join('./speed_features_local_logit1/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_logit_lnl2_outname = os.path.join('./speed_features_local_logit2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    speed_exp_gnl1_outname = os.path.join('./features/speed_features_global_m_exp1/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    speed_exp_gnl2_outname = os.path.join('./features/speed_features_global_m_exp2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    speed_exp_lnl2_outname = os.path.join('./features/speed_features_local_m_exp2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    speed_logit_gnl1_outname = os.path.join('./features/speed_features_global_logit1/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    speed_logit_gnl2_outname = os.path.join('./features/speed_features_global_logit2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    speed_logit_lnl1_outname = os.path.join('./features/speed_features_local_logit1/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    speed_logit_lnl2_outname = os.path.join('./features/speed_features_local_logit2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
     if(os.path.exists(speed_exp_gnl1_outname)):
+        print('feature file exists')
         return
     print(ref_video_name,dis_video_name,height,width,fps,speed_exp_gnl1_outname)
     speed_exp_lnl2_list = []
