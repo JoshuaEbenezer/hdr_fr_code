@@ -48,6 +48,3 @@ for folder in feature_folders:
         all_dmos.append(dmos)
 
     results(all_psnr,all_dmos)
-
-
-

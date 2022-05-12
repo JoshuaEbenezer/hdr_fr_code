@@ -10,14 +10,6 @@ import skimage.util
 import math
 from hdr_utils import hdr_yuv_read
 
-csv_file = '/home/josh-admin/hdr/qa/hdr_vmaf/python_vmaf/fall2021_yuv_rw_info.csv'
-csv_df = pd.read_csv(csv_file)
-files = csv_df["yuv"]
-ref_files = glob.glob('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_*')
-fps_list = csv_df["fps"]
-framenos_list = csv_df["framenos"]
-upscaled_yuv_names = [x[:-4]+'_upscaled.yuv' for x in csv_df['yuv']]
-content_list = [f.split('_')[2] for f in upscaled_yuv_names]
 
 def gen_gauss_window(lw, sigma):
     sd = np.float32(sigma)
@@ -235,7 +227,7 @@ def single_vid_psnr(i):
         dump(psnr_exp_gnl2_list,psnr_exp_gnl2_outname)
         dump(psnr_exp_gnl3_list,psnr_exp_gnl3_outname)
 
-
+        d
 
 
     #psnr_command = ['./run_psnr.sh',ref_video,dis_vid,psnr_outname,dis_fps]
@@ -245,5 +237,17 @@ def single_vid_psnr(i):
     #except:
     #    return
     return
+
+
+csv_file = '/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv'
+csv_df = pd.read_csv(csv_file)
+files = csv_df["yuv"]
+fps_list = 25
+framenos_list = csv_df["framenos"]
+upscaled_yuv_names = csv_df['yuv']
+ref_names = csv_df['ref']
+output_pth = './features/psnr_features/'
+if not os.path.exists(output_pth):
+    os.makedirs(output_pth)
 
 Parallel(n_jobs=60)(delayed(single_vid_psnr)(i) for i in range(len(upscaled_yuv_names)))

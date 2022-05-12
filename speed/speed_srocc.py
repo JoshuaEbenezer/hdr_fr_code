@@ -9,16 +9,26 @@ import glob
 
 #sys.stdout = open("speed_srcc_results.txt",'a')
 
-folders = glob.glob('./features/*')
+folders = glob.glob('./features/speed/')
+
+def logistic(t, b1, b2, b3, b4):
+    a = b1 # ymax
+    b = b2 # ymin
+    c = b3 # xmean
+    s = b4
+    yhat = (a-b)/(1+ np.exp(-((t-c)/abs(s)))) + b
+    return yhat
+
+
 def results(all_preds,all_dmos):
     all_preds = np.asarray(all_preds)
     print(np.max(all_preds),np.min(all_preds))
     all_preds[np.isnan(all_preds)]=0
     all_dmos = np.asarray(all_dmos)
-    [[b0, b1, b2, b3, b4], _] = curve_fit(lambda t, b0, b1, b2, b3, b4: b0 * (0.5 - 1.0/(1 + np.exp(b1*(t - b2))) + b3 * t + b4),
-                                          all_preds, all_dmos, p0=0.5*np.ones((5,)), maxfev=20000)
+    [[b1, b2, b3, b4], _] = curve_fit(logistic,
+                                          all_preds, all_dmos, p0=0.5*np.ones((4,)), maxfev=20000)
 
-    preds_fitted = b0 * (0.5 - 1.0/(1 + np.exp(b1*(all_preds - b2))) + b3 * all_preds+ b4)
+    preds_fitted = logistic(all_preds,b1, b2, b3, b4)
     preds_srocc = spearmanr(preds_fitted,all_dmos)
     preds_lcc = pearsonr(preds_fitted,all_dmos)
     preds_rmse = np.sqrt(np.mean((preds_fitted-all_dmos)**2))
@@ -38,19 +48,19 @@ for folder in folders:
     all_speed = []
     all_vspeed = []
     all_dmos = []
-    score_df = pd.read_csv('/Users/joshua/code/hdr/fall21_score_analysis/fall21_mos_and_dmos_rawavg.csv')
+    score_df = pd.read_csv('/home/zs5397/code/hdr_fr_code/Spring_2022_score.csv')
     out_folder = os.path.join('./feature_means/',base) 
     if(os.path.exists(out_folder)==False):
-        os.mkdir(out_folder)
+        os.makedirs(out_folder)
 
 
-    upscaled_names =[v+'_upscaled' for v in score_df["video"]]
+    upscaled_names =list(score_df["video"])
     for f in filenames:
-        if('ref' in f):
+        if('mu1000000' in f):
             continue
-        vid_name= os.path.splitext(os.path.basename(f))[0]
+        vid_name= os.path.splitext(os.path.basename(f))[0]+'.yuv'
         vid_index = upscaled_names.index(vid_name)
-        dmos = score_df["dark_dmos"].iloc[vid_index]
+        dmos = score_df["sureal_DMOS"].iloc[vid_index]
         outname= os.path.join(out_folder,vid_name+'.z')
         if(os.path.exists(outname)):
             X = load(outname)

@@ -243,30 +243,25 @@ def y4mFileRead(filePath,width, height,startFrame):
         y = np.reshape(y1,(height,width))
         return np.expand_dims(y,2)
 
-dis_metadata_csv = pd.read_csv("/home/josh-admin/hdr/qa/hdr_chipqa/fall2021_yuv_rw_info.csv")
-print([i for i in dis_metadata_csv["yuv"]])
-framenos_list = dis_metadata_csv["framenos"]
-
-outfolder = './hdr_rred_features'
-
 def single_vid_strred(i):
-    dis_basename = dis_metadata_csv['yuv'].iloc[i][:-4]+'_upscaled.yuv'
-    if('ref' in dis_basename):
+    dis_basename = dis_metadata_csv['yuv'].iloc[i]
+    ref_basename = dis_metadata_csv['ref'].iloc[i]
+    if dis_basename == ref_basename:
         return
-    dis_vid = os.path.join("/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv",dis_basename)
+    dis_vid = os.path.join("/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv",dis_basename)
     print(dis_vid)
     if(os.path.exists(dis_vid)==False):
         print('does not exist')
-        return
-    dis_fps = str(dis_metadata_csv['fps'].iloc[i])
-
-    content = dis_basename.split('_')[2]
-    ref_basename = '4k_ref_'+content+'_upscaled.yuv'
-    ref_fps = dis_fps
-    ref_filename = os.path.join("/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/",ref_basename)
+        raise
+    strred_outname = os.path.join('./hdr_rred_features/strred_features/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
+    if os.path.exists(strred_outname):
+        return 
+    dis_fps = 25
+    ref_filename = os.path.join("/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv",ref_basename)
 
     width,height=int(3840),int(2160)
-    strred_outname = os.path.join('./hdr_rred_features/strred_features/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
+    if not os.path.exists('./hdr_rred_features/strred_features/'):
+        os.makedirs('./hdr_rred_features/strred_features/')
     if(os.path.exists(strred_outname)):
         return
     print(ref_filename,dis_vid,height,width,dis_fps,strred_outname)
@@ -274,164 +269,47 @@ def single_vid_strred(i):
 
     frame_num= 0 
     strred_outname = os.path.join('./hdr_rred_features/strred_features/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    strred_exp_gnl1_outname = os.path.join('./hdr_rred_features/strred_features_global_m_exp1/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    strred_exp_gnl2_outname = os.path.join('./hdr_rred_features/strred_features_global_m_exp2/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    strred_exp_lnl1_outname = os.path.join('./hdr_rred_features/strred_features_local_m_exp1/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    strred_exp_lnl2_outname = os.path.join('./hdr_rred_features/strred_features_local_m_exp2/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    strred_logit_gnl1_outname = os.path.join('./hdr_rred_features/strred_features_global_logit1/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    strred_logit_gnl2_outname = os.path.join('./hdr_rred_features/strred_features_global_logit2/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    strred_logit_lnl1_outname = os.path.join('./hdr_rred_features/strred_features_local_logit1/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    strred_logit_lnl2_outname = os.path.join('./hdr_rred_features/strred_features_local_logit2/',os.path.splitext(os.path.basename(dis_vid))[0]+'.z')
-    if(os.path.exists(strred_exp_gnl1_outname)):
-        return
-    print(ref_filename,dis_vid,height,width,dis_fps,strred_exp_gnl1_outname)
+
     strred_list = []
-    strred_exp_lnl1_list = []
-    strred_exp_lnl2_list = []
-    strred_exp_gnl1_list = []
-    strred_exp_gnl2_list = []
-    strred_exp_lnl2_list = []
-    strred_logit_gnl1_list = []
-    strred_logit_gnl2_list = []
-    strred_logit_lnl1_list = []
-    strred_logit_lnl2_list = []
-
-
+    
     ref_video = open(ref_filename)
     dis_video = open(dis_vid)
     for framenum in range(framenos_list[i]):
         try:
             ref_y,_,_ =hdr_yuv_read(ref_video,framenum,height,width)
 
-            #exp local
-            ref_y_lnl1 = Y_compute_lnl(ref_y,nl_method='exp',nl_param=1) 
-            ref_y_lnl2 = Y_compute_lnl(ref_y,nl_method='exp',nl_param=2) 
-
-            # logit lnl
-            ref_y_logit_lnl1 = Y_compute_lnl(ref_y,nl_method='logit',nl_param=1) 
-            ref_y_logit_lnl2 = Y_compute_lnl(ref_y,nl_method='logit',nl_param=2) 
-
-            # exp gnl
-            ref_y_gnl1 = Y_compute_gnl(ref_y,nl_method='exp',nl_param=1) 
-            ref_y_gnl2 = Y_compute_gnl(ref_y,nl_method='exp',nl_param=2) 
-
-            # logit gnl
-            ref_y_gnl_logit1 = Y_compute_gnl(ref_y,nl_method='logit',nl_param=1) 
-            ref_y_gnl_logit2 = Y_compute_gnl(ref_y,nl_method='logit',nl_param=2) 
-
+           
             ref_y_next,_,_ =hdr_yuv_read(ref_video,framenum+1,height,width)
 
-            #exp local
-            ref_y_lnl1_next = Y_compute_lnl(ref_y_next,nl_method='exp',nl_param=1) 
-            ref_y_lnl2_next = Y_compute_lnl(ref_y_next,nl_method='exp',nl_param=2) 
-
-            # logit lnl
-            ref_y_logit_lnl1_next = Y_compute_lnl(ref_y_next,nl_method='logit',nl_param=1) 
-            ref_y_logit_lnl2_next = Y_compute_lnl(ref_y_next,nl_method='logit',nl_param=2) 
-
-            # exp gnl
-            ref_y_gnl1_next = Y_compute_gnl(ref_y_next,nl_method='exp',nl_param=1) 
-            ref_y_gnl2_next = Y_compute_gnl(ref_y_next,nl_method='exp',nl_param=2) 
-
-            # logit gnl
-            ref_y_gnl_logit1_next = Y_compute_gnl(ref_y_next,nl_method='logit',nl_param=1) 
-            ref_y_gnl_logit2_next = Y_compute_gnl(ref_y_next,nl_method='logit',nl_param=2) 
 
 
             dis_y,_,_ =hdr_yuv_read(dis_video,framenum,height,width) 
 
-            # exp lnl
-            dis_y_lnl1 = Y_compute_lnl(dis_y,nl_method='exp',nl_param=1) 
-            dis_y_lnl2 = Y_compute_lnl(dis_y,nl_method='exp',nl_param=2) 
-            # exp gnl
-            dis_y_gnl1 = Y_compute_gnl(dis_y,nl_method='exp',nl_param=1) 
-            dis_y_gnl2 = Y_compute_gnl(dis_y,nl_method='exp',nl_param=2) 
-
-            # logit lnl
-            dis_y_lnl_logit1 = Y_compute_lnl(dis_y,nl_method='logit',nl_param=1) 
-            dis_y_lnl_logit2 = Y_compute_lnl(dis_y,nl_method='logit',nl_param=2) 
-            # logit gnl
-            dis_y_gnl_logit1 = Y_compute_gnl(dis_y,nl_method='logit',nl_param=1) 
-            dis_y_gnl_logit2 = Y_compute_gnl(dis_y,nl_method='logit',nl_param=2) 
-
             dis_y_next,_,_ =hdr_yuv_read(dis_video,framenum+1,height,width) 
-
-            # exp lnl
-            dis_y_next_lnl1 = Y_compute_lnl(dis_y_next,nl_method='exp',nl_param=1) 
-            dis_y_next_lnl2 = Y_compute_lnl(dis_y_next,nl_method='exp',nl_param=2) 
-            # exp gnl
-            dis_y_next_gnl1 = Y_compute_gnl(dis_y_next,nl_method='exp',nl_param=1) 
-            dis_y_next_gnl2 = Y_compute_gnl(dis_y_next,nl_method='exp',nl_param=2) 
-
-            # logit lnl
-            dis_y_next_lnl_logit1 = Y_compute_lnl(dis_y_next,nl_method='logit',nl_param=1) 
-            dis_y_next_lnl_logit2 = Y_compute_lnl(dis_y_next,nl_method='logit',nl_param=2) 
-            # logit gnl
-            dis_y_next_gnl_logit1 = Y_compute_gnl(dis_y_next,nl_method='logit',nl_param=1) 
-            dis_y_next_gnl_logit2 = Y_compute_gnl(dis_y_next,nl_method='logit',nl_param=2) 
 
 
 
         except Exception as e:
             print(e)
             print(framenum, ' frames read')
-            if(len(strred_logit_lnl1_list)):
-                dump(strred_list,strred_outname)
-                dump(strred_exp_lnl1_list,strred_exp_lnl1_outname)
-                dump(strred_exp_lnl2_list,strred_exp_lnl2_outname)
-                dump(strred_exp_gnl1_list,strred_exp_gnl1_outname)
-                dump(strred_exp_gnl2_list,strred_exp_gnl2_outname)
-                dump(strred_logit_gnl1_list,strred_logit_gnl1_outname)
-                dump(strred_logit_gnl2_list,strred_logit_gnl2_outname)
-                dump(strred_logit_lnl1_list,strred_logit_lnl1_outname)
-                dump(strred_logit_lnl2_list,strred_logit_lnl2_outname)
+
+           
             break
         strred_val = compute_strred([ref_y,ref_y_next],[dis_y,dis_y_next])
-        strred_exp_lnl1 = compute_strred([ref_y_lnl1,ref_y_lnl1_next],[dis_y_lnl1,dis_y_next_lnl1])
-        strred_exp_lnl2 = compute_strred([ref_y_lnl2,ref_y_lnl2_next],[dis_y_lnl2,dis_y_next_lnl2])
-
-        strred_exp_gnl1 = compute_strred([ref_y_gnl1,ref_y_gnl1_next],[dis_y_gnl1,dis_y_next_gnl1])
-        strred_exp_gnl2 = compute_strred([ref_y_gnl2,ref_y_gnl2_next],[dis_y_gnl2,dis_y_next_gnl2])
-        
-        strred_logit_gnl1 = compute_strred([ref_y_gnl_logit1,ref_y_gnl_logit1_next],[dis_y_gnl_logit1,dis_y_next_gnl_logit1])
-        strred_logit_gnl2 = compute_strred([ref_y_gnl_logit2,ref_y_gnl_logit2_next],[dis_y_gnl_logit2,dis_y_next_gnl_logit2])
-        
-        strred_logit_lnl1 = compute_strred([ref_y_logit_lnl1,ref_y_logit_lnl1_next],[dis_y_lnl_logit1,dis_y_next_lnl_logit1])
-        strred_logit_lnl2 = compute_strred([ref_y_logit_lnl2,ref_y_logit_lnl2_next],[dis_y_lnl_logit2,dis_y_next_lnl_logit2])
-
+  
         strred_list.append(strred_val)
-        strred_exp_lnl1_list.append(strred_exp_lnl1)
-        strred_exp_lnl2_list.append(strred_exp_lnl2)
-        strred_exp_gnl1_list.append(strred_exp_gnl1)
-        strred_exp_gnl2_list.append(strred_exp_gnl2)
-        strred_logit_lnl1_list.append(strred_logit_lnl1)
-        strred_logit_lnl2_list.append(strred_logit_lnl2)
-        strred_logit_gnl1_list.append(strred_logit_gnl1)
-        strred_logit_gnl2_list.append(strred_logit_gnl2)
-#        except:
-#            strred_logit_lnl1_list = []
-#            break
-    if(len(strred_logit_lnl1_list)):
-        dump(strred_list,strred_outname)
-        dump(strred_exp_lnl1_list,strred_exp_lnl1_outname)
-        dump(strred_exp_lnl2_list,strred_exp_lnl2_outname)
-        dump(strred_exp_gnl1_list,strred_exp_gnl1_outname)
-        dump(strred_exp_gnl2_list,strred_exp_gnl2_outname)
-        dump(strred_logit_gnl1_list,strred_logit_gnl1_outname)
-        dump(strred_logit_gnl2_list,strred_logit_gnl2_outname)
-        dump(strred_logit_lnl1_list,strred_logit_lnl1_outname)
-        dump(strred_logit_lnl2_list,strred_logit_lnl2_outname)
+    dump(strred_list,strred_outname)
 
-
-
-    #strred_command = ['./run_strred.sh',ref_video,dis_vid,strred_outname,dis_fps]
-    #try:
-    #subprocess.check_call(strred_command)
-    #subprocess.check_call(psnr_command)
-    #except:
-    #    return
     return
 
-Parallel(n_jobs=30)(delayed(single_vid_strred)(i) for i in range(len(dis_metadata_csv)))
+
+
+dis_metadata_csv = pd.read_csv("/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv")
+print([i for i in dis_metadata_csv["yuv"]])
+framenos_list = dis_metadata_csv["framenos"]
+
+outfolder = './hdr_rred_features'
+
+Parallel(n_jobs=1)(delayed(single_vid_strred)(i) for i in range(len(dis_metadata_csv)))
 #for i in range(len(dis_metadata_csv)):
 #    single_vid_strred(i)

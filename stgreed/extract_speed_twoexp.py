@@ -7,16 +7,7 @@ import scipy.ndimage
 import pandas as pd
 import skimage.util
 import math
-from hdr_utils import hdr_yuv_read
-
-csv_file = '/home/josh-admin/hdr/qa/hdr_vmaf/python_vmaf/fall2021_yuv_rw_info.csv'
-csv_df = pd.read_csv(csv_file)
-files = csv_df["yuv"]
-ref_files = glob.glob('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_*')
-fps_list = csv_df["fps"]
-framenos_list = csv_df["framenos"]
-upscaled_yuv_names = [x[:-4]+'_upscaled.yuv' for x in csv_df['yuv']]
-content_list = [f.split('_')[2] for f in upscaled_yuv_names]
+from HDR_functions import hdr_yuv_read
 
 def gen_gauss_window(lw, sigma):
     sd = np.float32(sigma)
@@ -102,8 +93,8 @@ def Y_compute_lnl(Y,nl_method,nl_param):
 
 def compute_speed(ref, ref_next, dis, dis_next, \
                              window):
-    blk = 5;
-    sigma_nsq = 0.1;
+    blk = 5
+    sigma_nsq = 0.1
     times_to_down_size = 4; 
 
     #resize all frames
@@ -139,8 +130,8 @@ def compute_speed(ref, ref_next, dis, dis_next, \
     speed_s_sn = np.abs(np.nanmean(spatial_ref.ravel() - spatial_dis.ravel()))
     
     ## frame differencing
-    ref_diff = ref_next - ref;
-    dis_diff = dis_next - dis;
+    ref_diff = ref_next - ref
+    dis_diff = dis_next - dis
     
     ## calculate local averages of frame differences
     mu_ref_diff = np.zeros((h, w), dtype=np.float32)
@@ -225,159 +216,56 @@ def single_vid_speed(i):
     dis_video_name = upscaled_yuv_names[i]
     if('ref' in dis_video_name):
         return
-    content =content_list[i] 
-    fps =fps_list[i] 
-    ref_video_name = os.path.join('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
-    dis_video = open(os.path.join('/media/josh-admin/seagate/fall2021_hdr_upscaled_yuv',dis_video_name))
+    speed_outname = os.path.join(output_pth,os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    if os.path.exists(speed_outname):
+        return
+    fps =25
+    ref_video_name = os.path.join('/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv/',ref_names[i])
+    dis_video = open(os.path.join('/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv/',upscaled_yuv_names[i]))
 
     ref_video = open(ref_video_name)
 
     width,height=int(3840),int(2160)
-    speed_two_exp_lnl1_outname = os.path.join('./features/speed_features_local_two_exp1/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_two_exp_lnl2_outname = os.path.join('./features/speed_features_local_two_exp2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_two_exp_lnl3_outname = os.path.join('./features/speed_features_local_two_exp3/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-
-    speed_two_exp_gnl1_outname = os.path.join('./features/speed_features_local_two_exp1/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_two_exp_gnl2_outname = os.path.join('./features/speed_features_local_two_exp2/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-    speed_two_exp_gnl3_outname = os.path.join('./features/speed_features_local_two_exp3/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
-
-    if(os.path.exists(os.path.dirname(speed_two_exp_lnl1_outname))==False):
-        os.mkdir(os.path.dirname(speed_two_exp_lnl1_outname))
-    if(os.path.exists(os.path.dirname(speed_two_exp_lnl2_outname))==False):
-        os.mkdir(os.path.dirname(speed_two_exp_lnl2_outname))
-    if(os.path.exists(os.path.dirname(speed_two_exp_lnl3_outname))==False):
-        os.mkdir(os.path.dirname(speed_two_exp_lnl3_outname))
-
-    if(os.path.exists(os.path.dirname(speed_two_exp_gnl1_outname))==False):
-        os.mkdir(os.path.dirname(speed_two_exp_gnl1_outname))
-    if(os.path.exists(os.path.dirname(speed_two_exp_gnl2_outname))==False):
-        os.mkdir(os.path.dirname(speed_two_exp_gnl2_outname))
-    if(os.path.exists(os.path.dirname(speed_two_exp_gnl3_outname))==False):
-        os.mkdir(os.path.dirname(speed_two_exp_gnl3_outname))
-
-    if(os.path.exists(speed_two_exp_lnl1_outname)):
-        return
-    print(ref_video_name,dis_video_name,height,width,fps,speed_two_exp_lnl1_outname)
-    speed_two_exp_lnl1_list = []
-    speed_two_exp_lnl2_list = []
-    speed_two_exp_lnl3_list = []
-
-    speed_two_exp_gnl1_list = []
-    speed_two_exp_gnl2_list = []
-    speed_two_exp_gnl3_list = []
+   
+    print(ref_video_name,dis_video_name,height,width,fps)
 
     avg_window = gen_gauss_window(3, 7.0/6.0)
-
+    speed_list = []
     for framenum in range(framenos_list[i]-1):
+    # for framenum in range(2):
         try:
             ref_y,_,_ =hdr_yuv_read(ref_video,framenum,height,width)
-
-
-            # two_exp lnl
-            ref_y_two_exp_lnl1a,ref_y_two_exp_lnl1b  = Y_compute_lnl(ref_y,nl_method='two_exp',nl_param=0.5) 
-            ref_y_two_exp_lnl2a,ref_y_two_exp_lnl2b  = Y_compute_lnl(ref_y,nl_method='two_exp',nl_param=2) 
-            ref_y_two_exp_lnl3a,ref_y_two_exp_lnl3b  = Y_compute_lnl(ref_y,nl_method='two_exp',nl_param=5) 
-
-            # two exp gnl
-            ref_y_two_exp_gnl1a,ref_y_two_exp_gnl1b  = Y_compute_gnl(ref_y,nl_method='two_exp',nl_param=0.5) 
-            ref_y_two_exp_gnl2a,ref_y_two_exp_gnl2b  = Y_compute_gnl(ref_y,nl_method='two_exp',nl_param=2) 
-            ref_y_two_exp_gnl3a,ref_y_two_exp_gnl3b  = Y_compute_gnl(ref_y,nl_method='two_exp',nl_param=5) 
-
             ref_y_next,_,_ = hdr_yuv_read(ref_video,framenum+1,height,width) 
-
-            # two exp lnl
-            ref_y_lnl_two_exp1_nexta,ref_y_lnl_two_exp1_nextb = Y_compute_lnl(ref_y_next,nl_method='two_exp',nl_param=0.5) 
-            ref_y_lnl_two_exp2_nexta,ref_y_lnl_two_exp2_nextb  = Y_compute_lnl(ref_y_next,nl_method='two_exp',nl_param=2) 
-            ref_y_lnl_two_exp3_nexta,ref_y_lnl_two_exp3_nextb  = Y_compute_lnl(ref_y_next,nl_method='two_exp',nl_param=5) 
-            
-
-            # two_exp gnl
-            ref_y_gnl_two_exp1_nexta,ref_y_gnl_two_exp1_nextb = Y_compute_gnl(ref_y_next,nl_method='two_exp',nl_param=0.5) 
-            ref_y_gnl_two_exp2_nexta,ref_y_gnl_two_exp2_nextb  = Y_compute_gnl(ref_y_next,nl_method='two_exp',nl_param=2) 
-            ref_y_gnl_two_exp3_nexta,ref_y_gnl_two_exp3_nextb  = Y_compute_gnl(ref_y_next,nl_method='two_exp',nl_param=5) 
-
             dis_y,_,_ =hdr_yuv_read(dis_video,framenum,height,width) 
-
-            # two_exp lnl
-            dis_y_two_exp_lnl1a,dis_y_two_exp_lnl1b  = Y_compute_lnl(dis_y,nl_method='two_exp',nl_param=0.5) 
-            dis_y_two_exp_lnl2a,dis_y_two_exp_lnl2b  = Y_compute_lnl(dis_y,nl_method='two_exp',nl_param=2) 
-            dis_y_two_exp_lnl3a,dis_y_two_exp_lnl3b  = Y_compute_lnl(dis_y,nl_method='two_exp',nl_param=5) 
-
-            # two exp gnl
-            dis_y_two_exp_gnl1a,dis_y_two_exp_gnl1b  = Y_compute_gnl(dis_y,nl_method='two_exp',nl_param=0.5) 
-            dis_y_two_exp_gnl2a,dis_y_two_exp_gnl2b  = Y_compute_gnl(dis_y,nl_method='two_exp',nl_param=2) 
-            dis_y_two_exp_gnl3a,dis_y_two_exp_gnl3b  = Y_compute_gnl(dis_y,nl_method='two_exp',nl_param=5) 
-
             dis_y_next,_,_ = hdr_yuv_read(dis_video,framenum+1,height,width) 
-
-            # two exp lnl
-            dis_y_lnl_two_exp1_nexta,dis_y_lnl_two_exp1_nextb = Y_compute_lnl(dis_y_next,nl_method='two_exp',nl_param=0.5) 
-            dis_y_lnl_two_exp2_nexta,dis_y_lnl_two_exp2_nextb  = Y_compute_lnl(dis_y_next,nl_method='two_exp',nl_param=2) 
-            dis_y_lnl_two_exp3_nexta,dis_y_lnl_two_exp3_nextb  = Y_compute_lnl(dis_y_next,nl_method='two_exp',nl_param=5) 
-            
-
-            # two_exp gnl
-            dis_y_gnl_two_exp1_nexta,dis_y_gnl_two_exp1_nextb = Y_compute_gnl(dis_y_next,nl_method='two_exp',nl_param=0.5) 
-            dis_y_gnl_two_exp2_nexta,dis_y_gnl_two_exp2_nextb  = Y_compute_gnl(dis_y_next,nl_method='two_exp',nl_param=2) 
-            dis_y_gnl_two_exp3_nexta,dis_y_gnl_two_exp3_nextb  = Y_compute_gnl(dis_y_next,nl_method='two_exp',nl_param=5) 
-
 
         except Exception as e:
             print(e)
-            if(len(speed_two_exp_lnl1_list)):
-                dump(speed_two_exp_lnl1_list,speed_two_exp_lnl1_outname)
-                dump(speed_two_exp_lnl2_list,speed_two_exp_lnl2_outname)
-                dump(speed_two_exp_lnl3_list,speed_two_exp_lnl3_outname)
-
-                dump(speed_two_exp_gnl1_list,speed_two_exp_gnl1_outname)
-                dump(speed_two_exp_gnl2_list,speed_two_exp_gnl2_outname)
-                dump(speed_two_exp_gnl3_list,speed_two_exp_gnl3_outname)
+           
             break
         try:
-            speed_two_exp_lnl1a = compute_speed(ref_y_two_exp_lnl1a,ref_y_lnl_two_exp1_nexta,dis_y_two_exp_lnl1a,dis_y_lnl_two_exp1_nexta,avg_window)
-            speed_two_exp_lnl2a = compute_speed(ref_y_two_exp_lnl2a,ref_y_lnl_two_exp2_nexta,dis_y_two_exp_lnl2a,dis_y_lnl_two_exp2_nexta,avg_window)
-            speed_two_exp_lnl3a = compute_speed(ref_y_two_exp_lnl3a,ref_y_lnl_two_exp3_nexta,dis_y_two_exp_lnl3a,dis_y_lnl_two_exp3_nexta,avg_window)
-
-            speed_two_exp_lnl1b = compute_speed(ref_y_two_exp_lnl1b,ref_y_lnl_two_exp1_nextb,dis_y_two_exp_lnl1b,dis_y_lnl_two_exp1_nextb,avg_window)
-            speed_two_exp_lnl2b = compute_speed(ref_y_two_exp_lnl2b,ref_y_lnl_two_exp2_nextb,dis_y_two_exp_lnl2b,dis_y_lnl_two_exp2_nextb,avg_window)
-            speed_two_exp_lnl3b = compute_speed(ref_y_two_exp_lnl3b,ref_y_lnl_two_exp3_nextb,dis_y_two_exp_lnl3b,dis_y_lnl_two_exp3_nextb,avg_window)
-
-            speed_two_exp_gnl1a = compute_speed(ref_y_two_exp_gnl1a,ref_y_gnl_two_exp1_nexta,dis_y_two_exp_gnl1a,dis_y_gnl_two_exp1_nexta,avg_window)
-            speed_two_exp_gnl2a = compute_speed(ref_y_two_exp_gnl2a,ref_y_gnl_two_exp2_nexta,dis_y_two_exp_gnl2a,dis_y_gnl_two_exp2_nexta,avg_window)
-            speed_two_exp_gnl3a = compute_speed(ref_y_two_exp_gnl3a,ref_y_gnl_two_exp3_nexta,dis_y_two_exp_gnl3a,dis_y_gnl_two_exp3_nexta,avg_window)
-
-            speed_two_exp_gnl1b = compute_speed(ref_y_two_exp_gnl1b,ref_y_gnl_two_exp1_nextb,dis_y_two_exp_gnl1b,dis_y_gnl_two_exp1_nextb,avg_window)
-            speed_two_exp_gnl2b = compute_speed(ref_y_two_exp_gnl2b,ref_y_gnl_two_exp2_nextb,dis_y_two_exp_gnl2b,dis_y_gnl_two_exp2_nextb,avg_window)
-            speed_two_exp_gnl3b = compute_speed(ref_y_two_exp_gnl3b,ref_y_gnl_two_exp3_nextb,dis_y_two_exp_gnl3b,dis_y_gnl_two_exp3_nextb,avg_window)
-
-            speed_two_exp_lnl1_list.append(np.concatenate((speed_two_exp_lnl1a,speed_two_exp_lnl1b)))
-            speed_two_exp_lnl2_list.append(np.concatenate((speed_two_exp_lnl2a,speed_two_exp_lnl2b)))
-            speed_two_exp_lnl3_list.append(np.concatenate((speed_two_exp_lnl3a,speed_two_exp_lnl3b)))
-
-            speed_two_exp_gnl1_list.append(np.concatenate((speed_two_exp_gnl1a,speed_two_exp_gnl1b)))
-            speed_two_exp_gnl2_list.append(np.concatenate((speed_two_exp_gnl2a,speed_two_exp_gnl2b)))
-            speed_two_exp_gnl3_list.append(np.concatenate((speed_two_exp_gnl3a,speed_two_exp_gnl3b)))
+            
+            speed = compute_speed(ref_y,ref_y_next,dis_y,dis_y_next,avg_window)
+            speed_list.append(speed)
         except:
-            speed_two_exp_lnl1_list = []
-            break
-    if(len(speed_two_exp_lnl1_list)):
-        dump(speed_two_exp_lnl1_list,speed_two_exp_lnl1_outname)
-        dump(speed_two_exp_lnl2_list,speed_two_exp_lnl2_outname)
-        dump(speed_two_exp_lnl3_list,speed_two_exp_lnl3_outname)
+            raise
+    
 
-        dump(speed_two_exp_gnl1_list,speed_two_exp_gnl1_outname)
-        dump(speed_two_exp_gnl2_list,speed_two_exp_gnl2_outname)
-        dump(speed_two_exp_gnl3_list,speed_two_exp_gnl3_outname)
+    dump(speed_list,speed_outname)
 
 
-
-
-    #speed_command = ['./run_speed.sh',ref_video,dis_vid,speed_outname,dis_fps]
-    #try:
-    #subprocess.check_call(speed_command)
-    #subprocess.check_call(psnr_command)
-    #except:
-    #    return
     return
 
-Parallel(n_jobs=120)(delayed(single_vid_speed)(i) for i in range(len(upscaled_yuv_names)))
+
+
+csv_file = '/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv'
+csv_df = pd.read_csv(csv_file)
+files = csv_df["yuv"]
+fps_list = 25
+framenos_list = csv_df["framenos"]
+upscaled_yuv_names = csv_df['yuv']
+ref_names = csv_df['ref']
+output_pth = './features/speed'
+if not os.path.exists(output_pth):
+    os.makedirs(output_pth)
+Parallel(n_jobs=1)(delayed(single_vid_speed)(i) for i in range(len(upscaled_yuv_names)))

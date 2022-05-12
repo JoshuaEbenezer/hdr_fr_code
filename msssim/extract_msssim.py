@@ -10,15 +10,6 @@ import skimage.util
 import math
 from hdr_utils import hdr_yuv_read
 
-csv_file = '/home/labuser-admin/hdr/hdr_chipqa/fall2021_yuv_rw_info.csv'
-csv_df = pd.read_csv(csv_file)
-files = csv_df["yuv"]
-ref_files = glob.glob('/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv/4k_ref_*')
-fps_list = csv_df["fps"]
-framenos_list = csv_df["framenos"]
-upscaled_yuv_names = [x[:-4]+'_upscaled.yuv' for x in csv_df['yuv']]
-content_list = [f.split('_')[2] for f in upscaled_yuv_names]
-
 
 def ssim_core(referenceVideoFrame, distortedVideoFrame, K_1, K_2, bitdepth, scaleFix, avg_window):
 
@@ -131,20 +122,22 @@ def msssim(frame1, frame2, method='product'):
     return overall_mssim
 
 def single_vid_msssim(i):
+   
     dis_video_name = upscaled_yuv_names[i]
-    if('ref' in dis_video_name):
+    ref_video_name = os.path.join('/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv/',ref_names[i])
+    if dis_video_name == ref_names[i]:
         return
-    content =content_list[i] 
-    fps =fps_list[i] 
-    ref_video_name = os.path.join('/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv/4k_ref_'+content+'_upscaled.yuv')
-    if(os.path.exists(os.path.join('/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv',dis_video_name))):
-        dis_video = open(os.path.join('/mnt/b9f5646b-2c64-4699-8766-c4bba45fb442/fall2021_hdr_upscaled_yuv',dis_video_name))
-    else:
-        dis_video = open(os.path.join('/media/labuser-admin/nebula_josh/hdr/fall2021_hdr_upscaled_yuv',dis_video_name))
+    speed_outname = os.path.join(output_pth,os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+    if os.path.exists(speed_outname):
+        return
+    fps =25
+    dis_video = open(os.path.join('/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv/',upscaled_yuv_names[i]))
+
     ref_video = open(ref_video_name)
 
     width,height=int(3840),int(2160)
-    msssim_outname = os.path.join('./features/msssim_features_bitdepth10/',os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
+   
+    msssim_outname = speed_outname
     if(os.path.exists(msssim_outname)):
         return
 
@@ -176,4 +169,19 @@ def single_vid_msssim(i):
     #    return
     return
 
-Parallel(n_jobs=30)(delayed(single_vid_msssim)(i) for i in range(len(upscaled_yuv_names)))
+
+
+
+csv_file = '/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv'
+csv_df = pd.read_csv(csv_file)
+files = csv_df["yuv"]
+fps_list = 25
+framenos_list = csv_df["framenos"]
+upscaled_yuv_names = csv_df['yuv']
+ref_names = csv_df['ref']
+output_pth = './features/msssim_features/'
+if not os.path.exists(output_pth):
+    os.makedirs(output_pth)
+
+
+Parallel(n_jobs=60)(delayed(single_vid_msssim)(i) for i in range(len(upscaled_yuv_names)))

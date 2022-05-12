@@ -1,1 +1,5 @@
 *.pyc
+features
+hdr_rred_features
+*.z
+*.mat
