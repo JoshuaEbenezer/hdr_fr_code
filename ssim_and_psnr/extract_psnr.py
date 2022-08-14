@@ -65,14 +65,15 @@ def Y_compute_lnl(Y,nl_method,nl_param):
 def single_vid_psnr(i):
 
     dis_video_name = upscaled_yuv_names[i]
-    ref_video_name = os.path.join('/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv/',ref_names[i])
+    ref_video_name = os.path.join('/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/',ref_names[i])
     if dis_video_name == ref_names[i]:
         return
     speed_outname = os.path.join(output_pth,os.path.splitext(os.path.basename(dis_video_name))[0]+'.z')
     if os.path.exists(speed_outname):
+        print('found')
         return
     fps =25
-    dis_video = open(os.path.join('/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv/',upscaled_yuv_names[i]))
+    dis_video = open(os.path.join('/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/',upscaled_yuv_names[i]))
 
     ref_video = open(ref_video_name)
 
@@ -126,4 +127,4 @@ if not os.path.exists(output_pth):
     os.makedirs(output_pth)
 
 
-Parallel(n_jobs=60)(delayed(single_vid_psnr)(i) for i in range(len(upscaled_yuv_names)))
+Parallel(n_jobs=100)(delayed(single_vid_psnr)(i) for i in range(len(upscaled_yuv_names)))

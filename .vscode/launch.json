@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--framenos_list",
+                "/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv",
+                "--output_pth",
+                "/media/zaixi/zaixi_nas/HDRproject/feats/fr_evaluate_HDRAQ/",
+                "--nonlinear_method",
+                "texp",
+                "--patch_size",
+                "31",
+                "--type",
+                "local",
+                "--nonlinear_param",
+                "5"
+            ]
+        }
+    ]
+}
