@@ -2,7 +2,7 @@ import numpy as np
 import os
 import glob
 import cv2
-from joblib import Parallel,delayed,dump
+from joblib import Parallel, delayed, dump
 import scipy.ndimage
 import pandas as pd
 from skvideo.utils.mscn import gen_gauss_window
@@ -11,10 +11,10 @@ import math
 from hdr_utils import hdr_yuv_read
 import argparse
 import numpy as np
-from scipy import ndimage 
+from scipy import ndimage
 from transform_frame import TransformFrame
 from skimage.metrics._structural_similarity import structural_similarity_features as ssim_features
-
+import pdb
 
 parser = argparse.ArgumentParser(
     description='Compute MS-SSIM for a set of videos')
@@ -32,11 +32,9 @@ nltrans = TransformFrame(args.nonlinear_method, args.nonlinear_param,
                          nl_type=args.type, patch_size=args.patch_size)
 
 
-
 def msssim(frame1, frame2, method='product'):
     feats = []
     level = 3
-
 
     downsample_filter = np.ones(2, dtype=np.float32)/2.0
 
@@ -44,20 +42,24 @@ def msssim(frame1, frame2, method='product'):
     im2 = frame2.astype(np.float32)
 
     for i in range(level):
+        pdb.set_trace()
         feat_one_scale = ssim_features(im1, im2)
-        feats+=feat_one_scale
+        feats += feat_one_scale
         filtered_im1 = scipy.ndimage.correlate1d(im1, downsample_filter, 0)
-        filtered_im1 = scipy.ndimage.correlate1d(filtered_im1, downsample_filter, 1)
+        filtered_im1 = scipy.ndimage.correlate1d(
+            filtered_im1, downsample_filter, 1)
         filtered_im1 = filtered_im1[1:, 1:]
 
         filtered_im2 = scipy.ndimage.correlate1d(im2, downsample_filter, 0)
-        filtered_im2 = scipy.ndimage.correlate1d(filtered_im2, downsample_filter, 1)
+        filtered_im2 = scipy.ndimage.correlate1d(
+            filtered_im2, downsample_filter, 1)
         filtered_im2 = filtered_im2[1:, 1:]
 
         im1 = filtered_im1[::2, ::2]
         im2 = filtered_im2[::2, ::2]
-
+        pdb.set_trace()
     return feats
+
 
 def single_vid_msssim(i):
     dis_video_name = upscaled_yuv_names[i]
@@ -93,12 +95,12 @@ def single_vid_msssim(i):
             dis_y = nltrans.transform_frame(dis_y)
         feats = msssim(ref_y, dis_y)
         ssim_list.append(feats)
+        pdb.set_trace()
     vid_feats = np.array(ssim_list)
     df_one = pd.DataFrame(vid_feats.mean(axis=0)).transpose()
 
     df_one['video'] = dis_video_name
     return df_one
-
 
 
 # csv_file = '/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv'
@@ -109,11 +111,11 @@ fps_list = 25
 framenos_list = csv_df["framenos"]
 upscaled_yuv_names = csv_df['yuv']
 ref_names = csv_df['ref']
-output_pth = os.path.join(args.output_pth, 'ssim')
+output_pth = os.path.join(args.output_pth, 'msssim')
 
 if not os.path.exists(output_pth):
     os.makedirs(output_pth)
-r = Parallel(n_jobs=100)(delayed(single_vid_msssim)(i)
+r = Parallel(n_jobs=1)(delayed(single_vid_msssim)(i)
                        for i in range(0, len(upscaled_yuv_names)))
 features = pd.concat(r)
 features.to_csv(

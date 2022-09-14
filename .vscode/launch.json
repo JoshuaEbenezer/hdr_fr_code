@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": false,
+            "justMyCode": true,
             "args": [
                 "--framenos_list",
                 "/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv",

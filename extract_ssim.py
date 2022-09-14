@@ -14,7 +14,8 @@ from hdr_utils import hdr_yuv_read
 from transform_frame import TransformFrame
 import argparse
 import numpy as np
-from scipy import ndimage 
+from scipy import ndimage
+
 parser = argparse.ArgumentParser(
     description='Compute SSIM for a set of videos')
 
@@ -35,7 +36,7 @@ nltrans = TransformFrame(args.nonlinear_method, args.nonlinear_param,
 #     win_mean_x = ndimage.uniform_filter(im_x, (win_rows, win_cols),mode = 'mirror')
 #     win_sqr_mean_x  = ndimage.uniform_filter(im_x**2, (win_rows, win_cols),mode = 'mirror')
 #     win_var_x = win_sqr_mean_x - win_mean_x**2
-    
+
 
 def single_vid_ssim(i):
     dis_video_name = upscaled_yuv_names[i]
@@ -65,7 +66,8 @@ def single_vid_ssim(i):
         print(framenum)
         ref_y, _, _ = hdr_yuv_read(ref_video, framenum, height, width)
         dis_y, _, _ = hdr_yuv_read(dis_video, framenum, height, width)
-
+        ref_y = ref_y.astype(np.float32)
+        dis_y = dis_y.astype(np.float32)
         if args.nonlinear_method.lower() != 'none':
             ref_y = nltrans.transform_frame(ref_y)
             dis_y = nltrans.transform_frame(dis_y)
@@ -90,8 +92,8 @@ output_pth = os.path.join(args.output_pth, 'ssim')
 
 if not os.path.exists(output_pth):
     os.makedirs(output_pth)
-r = Parallel(n_jobs=100)(delayed(single_vid_ssim)(i)
-                       for i in range(0, len(upscaled_yuv_names)))
+r = Parallel(n_jobs=80)(delayed(single_vid_ssim)(i)
+                        for i in range(0, len(upscaled_yuv_names)))
 features = pd.concat(r)
 features.to_csv(
     f'{output_pth}/ssim_{args.nonlinear_method}_{args.type}_{args.nonlinear_param}_{args.patch_size}_.csv')
