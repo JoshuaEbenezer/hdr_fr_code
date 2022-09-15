@@ -6,10 +6,14 @@ from entropy.entropy_params import est_params_ggd
 import scipy.signal
 from skvideo.utils.mscn import gen_gauss_window
 import scipy.ndimage
+from skimage.filters import rank
+from skimage.morphology import disk
+
+import pdb
 
 
 def compute_nl(Y, nl_method, nl_param, domain):
-
+    h, w = np.shape(Y)
     Y = Y.astype(np.float32)
     if nl_method == 'none':
         return Y
@@ -40,7 +44,7 @@ def compute_nl(Y, nl_method, nl_param, domain):
     elif(domain == 'local'):
         if(nl_method == 'one_exp'):
             Y = Y/1023.0
-            h, w = np.shape(Y)
+
             avg_window = gen_gauss_window(31//2, 7.0/6.0)
             mu_image = np.zeros((h, w), dtype=np.float32)
             Y = np.array(Y).astype('float32')
@@ -58,13 +62,31 @@ def compute_nl(Y, nl_method, nl_param, domain):
             Y_transform = np.log((1+(Y_scaled)**delta)/(1-(Y_scaled)**delta))
             if(delta % 2 == 0):
                 Y_transform[Y < 0] = -Y_transform[Y < 0]
-        elif(nl_method == 'exp'):
-            maxY = scipy.ndimage.maximum_filter(Y, size=(31, 31))
-            minY = scipy.ndimage.minimum_filter(Y, size=(31, 31))
-            delta = nl_param
-            Y = -4+(Y-minY) * 8/(1e-3+maxY-minY)
-            Y_transform = np.exp(np.abs(Y)**delta)-1
-            Y_transform[Y < 0] = -Y_transform[Y < 0]
+        elif(nl_method == 'texp'):
+            patch_size = 31
+            Y = Y/np.max(Y)
+            avg_window = gen_gauss_window(patch_size//2, 7.0/6.0)
+            mu_image = np.zeros((h, w), dtype=np.float32)
+            image = np.array(Y).astype('float32')
+            scipy.ndimage.correlate1d(
+                image, avg_window, 0, mu_image, mode='constant')
+            scipy.ndimage.correlate1d(mu_image, avg_window, 1,
+                                      mu_image, mode='constant')
+            Y_transform = np.exp(nl_param*(image - mu_image))
+
+        elif(nl_method == 'lhe'):
+            scale = np.max(Y)
+            footprint = 31
+            scale_neg = np.min(Y)
+            # print(scale_neg)
+            coef_1 = (Y-scale_neg)/(scale-scale_neg)
+            coef_16 = coef_1*1023
+            coef_16 = coef_16.astype(np.uint16)
+            footprint = disk(footprint)
+            img_eq_ref = rank.equalize(coef_16, selem=footprint)
+            Y_transform = img_eq_ref.astype(
+                np.float32)/1023*(scale-scale_neg)+scale_neg
+
         elif(nl_method == 'custom'):
             maxY = scipy.ndimage.maximum_filter(Y, size=(31, 31))
             minY = scipy.ndimage.minimum_filter(Y, size=(31, 31))
