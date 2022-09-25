@@ -123,6 +123,8 @@ def video_process(vid_path, nl_method, nl_param, nl_domain, width, height, bit_d
     vid_stream = open(vid_path, 'r')
 
     for scale_factor in scales:
+        print('Processing scale factor: ' +
+              str(scale_factor), 'video: ' + vid_path)
         sz = 2**(-scale_factor)
         frame_data = np.zeros((int(height*sz), int(width*sz), T))
 
@@ -130,6 +132,7 @@ def video_process(vid_path, nl_method, nl_param, nl_domain, width, height, bit_d
         spatial_ent = []
         for frame_ind in range(T):
             # for frame_ind in range(3):
+
             Y, _, _ = \
                 yuvRead_frame(vid_stream, width, height,
                               frame_ind, bit_depth, gray, sz)

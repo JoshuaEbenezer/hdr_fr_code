@@ -15,11 +15,11 @@ from os.path import join
 def greed_single_vid(i):
 
     ref_video_name = os.path.join(
-        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/', ref_names[i])
+        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_hdr_upscaled_yuv', ref_names[i])
     dis_video = os.path.join(
-        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/', upscaled_yuv_names[i])
-    tmpcsv = f'./tmp/tmp_{args.nl_method}_{args.nl_param}/{os.path.basename(dis_video)}.csv'
-    os.makedirs(f'tmp/tmp_{args.nl_method}_{args.nl_param}', exist_ok=True)
+        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_hdr_upscaled_yuv', upscaled_yuv_names[i])
+    tmpcsv = f'./tmp_21/tmp_{args.nl_method}_{args.nl_param}/{os.path.basename(dis_video)}.csv'
+    os.makedirs(f'tmp_21/tmp_{args.nl_method}_{args.nl_param}', exist_ok=True)
     if os.path.exists(tmpcsv):
         return
     height = 2160
@@ -38,7 +38,8 @@ def greed_single_vid(i):
                             'bior22', height, width, bit_depth, args.nl_method, args.nl_param, 'local')
     df_one = pd.DataFrame(GREED_feat).transpose()
     df_one['video'] = os.path.basename(dis_video)
-    df_one.to_csv(f'./tmp/{os.path.basename(dis_video)}.csv')
+    df_one.to_csv(
+        f'tmp_21/tmp_{args.nl_method}_{args.nl_param}/{os.path.basename(dis_video)}.csv')
     return df_one
 
 
@@ -50,18 +51,18 @@ argparser.add_argument(
 
 args = argparser.parse_args()
 
-csv_file = '/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv'
+csv_file = '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_yuv_rw_info.csv'
 csv_df = pd.read_csv(csv_file)
 files = csv_df["yuv"]
 framenos_list = csv_df["framenos"]
 upscaled_yuv_names = csv_df['yuv']
 ref_names = csv_df['ref']
 
-output_pth = '/media/zaixi/zaixi_nas/HDRproject/feats/fr_evaluate_HDRAQ_correct/greed'
+output_pth = '/media/zaixi/zaixi_nas/HDRproject/feats/fr_evaluate_HDRLIVE_correct/greed'
 if not os.path.exists(output_pth):
     os.makedirs(output_pth)
-r = Parallel(n_jobs=100, prefer="threads")(delayed(greed_single_vid)(i)
-                                           for i in range(len(upscaled_yuv_names)))
+r = Parallel(n_jobs=100, prefer="threads", backend='multiprocessing')(delayed(greed_single_vid)(i)
+                                                                      for i in range(len(upscaled_yuv_names)))
 df = pd.concat(r)
 df.to_csv(
     join(output_pth, f'greed_{args.nl_method}_local_{args.nl_param}_31_.csv'))
