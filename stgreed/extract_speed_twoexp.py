@@ -230,9 +230,9 @@ def single_vid_speed(i):
 
     fps = 1
     ref_video_name = os.path.join(
-        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/', ref_names[i])
+        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_hdr_upscaled_yuv', ref_names[i])
     dis_video = open(os.path.join(
-        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/', upscaled_yuv_names[i]))
+        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_hdr_upscaled_yuv', upscaled_yuv_names[i]))
 
     ref_video = open(ref_video_name)
 
@@ -261,17 +261,19 @@ def single_vid_speed(i):
         speed_list.append(speed)
         df_one = pd.DataFrame(np.nanmean(speed_list, axis=0)).transpose()
         df_one['video'] = dis_video_name
+        df_one.to_csv(
+            './temp/speed/{}.csv'.format(os.path.basename(dis_video_name)), index=False)
     return df_one
 
 
-csv_file = '/home/zs5397/code/hdr_fr_code/spring2022_yuv_info.csv'
+csv_file = '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_yuv_rw_info.csv'
 csv_df = pd.read_csv(csv_file)
 files = csv_df["yuv"]
 fps_list = 25
 framenos_list = csv_df["framenos"]
 upscaled_yuv_names = csv_df['yuv']
 ref_names = csv_df['ref']
-output_pth = '/media/zaixi/zaixi_nas/HDRproject/feats/fr_evaluate_HDRAQ_correct/speed'
+output_pth = '/media/zaixi/zaixi_nas/HDRproject/feats/fr_evaluate_HDRLIVE_correct/speed'
 if not os.path.exists(output_pth):
     os.makedirs(output_pth)
 r = Parallel(n_jobs=50)(delayed(single_vid_speed)(i)

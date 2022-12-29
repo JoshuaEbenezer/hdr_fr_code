@@ -292,7 +292,7 @@ if( metric_par.do_quality_raw_data )
 end
 
 Q = 0; % quality correlate
-
+Q_by_band = zeros( 1, b_count );
 % For each band
 for b = 1:b_count
     
@@ -392,7 +392,7 @@ for b = 1:b_count
         D_p = D .* diff_mask_b;
         
         Q = Q + (log( msre( D_p ) + epsilon )-log(epsilon)) * w_f;
-        
+        Q_by_band(b) = 100 - (log( msre( D_p ) + epsilon )-log(epsilon)) * w_f;
         if( metric_par.do_quality_raw_data )
             qres = quality_pred_band( qres, D_p, b, o );
         end
@@ -420,7 +420,7 @@ res.P_det = max( res.P_map(:) );
 res.C_map = S_map;
 res.C_max = max( S_map(:) );
 res.Q = 100-Q;
-
+res.Q_by_band = Q_by_band;
 % This MOS fitting did not work very well, disabled for now
 %res.Q_MOS = 100 / (1+exp(metric_par.quality_logistic_q1*(Q+metric_par.quality_logistic_q2)));
 

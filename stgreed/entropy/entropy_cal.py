@@ -74,6 +74,18 @@ def compute_nl(Y, nl_method, nl_param, domain):
                                       mu_image, mode='constant')
             Y_transform = np.exp(nl_param*(image - mu_image))
 
+        elif(nl_method == 'lnl'):
+
+            
+            if(len(Y.shape)==2):
+                Y = np.expand_dims(Y,axis=2)
+
+            maxY = scipy.ndimage.maximum_filter(Y,size=(17,17,1))
+            minY = scipy.ndimage.minimum_filter(Y,size=(17,17,1))
+            Y_scaled = -1+(Y-minY)* 2/(1e-3+maxY-minY)
+            Y_transform =  np.exp(np.abs(Y_scaled)*4)-1
+            Y_transform[Y_scaled<0] = -Y_transform[Y_scaled<0]
+            Y_transform = np.squeeze(Y_transform)
         elif(nl_method == 'lhe'):
             scale = np.max(Y)
             footprint = 31
@@ -92,6 +104,7 @@ def compute_nl(Y, nl_method, nl_param, domain):
             minY = scipy.ndimage.minimum_filter(Y, size=(31, 31))
             Y = -0.99+(Y-minY) * 1.98/(1e-3+maxY-minY)
             Y_transform = transform(Y, 5)
+
         elif(nl_method == 'sigmoid'):
             avg_luminance = scipy.ndimage.gaussian_filter(Y, sigma=7.0/6.0)
             Y_transform = 1/(1+(np.exp(-(1e-3*(Y-avg_luminance)))))

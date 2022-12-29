@@ -42,7 +42,6 @@ def msssim(frame1, frame2, method='product'):
     im2 = frame2.astype(np.float32)
 
     for i in range(level):
-        pdb.set_trace()
         feat_one_scale = ssim_features(im1, im2)
         feats += feat_one_scale
         filtered_im1 = scipy.ndimage.correlate1d(im1, downsample_filter, 0)
@@ -57,14 +56,13 @@ def msssim(frame1, frame2, method='product'):
 
         im1 = filtered_im1[::2, ::2]
         im2 = filtered_im2[::2, ::2]
-        pdb.set_trace()
     return feats
 
 
 def single_vid_msssim(i):
     dis_video_name = upscaled_yuv_names[i]
     ref_video_name = os.path.join(
-        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/', ref_names[i])
+        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_hdr_upscaled_yuv', ref_names[i])
     ssim_outname = os.path.join(output_pth, os.path.splitext(
         os.path.basename(dis_video_name))[0]+'.csv')
     if dis_video_name == ref_names[i]:
@@ -74,7 +72,7 @@ def single_vid_msssim(i):
         return
     fps = 1
     dis_video = open(os.path.join(
-        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/', upscaled_yuv_names[i]))
+        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_hdr_upscaled_yuv', upscaled_yuv_names[i]))
 
     ref_video = open(ref_video_name)
 
@@ -95,7 +93,6 @@ def single_vid_msssim(i):
             dis_y = nltrans.transform_frame(dis_y)
         feats = msssim(ref_y, dis_y)
         ssim_list.append(feats)
-        pdb.set_trace()
     vid_feats = np.array(ssim_list)
     df_one = pd.DataFrame(vid_feats.mean(axis=0)).transpose()
 
@@ -115,8 +112,8 @@ output_pth = os.path.join(args.output_pth, 'msssim')
 
 if not os.path.exists(output_pth):
     os.makedirs(output_pth)
-r = Parallel(n_jobs=1)(delayed(single_vid_msssim)(i)
-                       for i in range(0, len(upscaled_yuv_names)))
+r = Parallel(n_jobs=100)(delayed(single_vid_msssim)(i)
+                         for i in range(0, len(upscaled_yuv_names)))
 features = pd.concat(r)
 features.to_csv(
     f'{output_pth}/msssim_{args.nonlinear_method}_{args.type}_{args.nonlinear_param}_{args.patch_size}_.csv')

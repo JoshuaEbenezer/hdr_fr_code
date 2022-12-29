@@ -193,7 +193,7 @@ def strred_features(referenceVideoData, distortedVideoData):
 def single_vid_strred(i):
     dis_video_name = upscaled_yuv_names[i]
     ref_video_name = os.path.join(
-        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/', ref_names[i])
+        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_hdr_upscaled_yuv', ref_names[i])
     ssim_outname = os.path.join(output_pth, os.path.splitext(
         os.path.basename(dis_video_name))[0]+'.csv')
     if dis_video_name == ref_names[i]:
@@ -203,7 +203,7 @@ def single_vid_strred(i):
         return
     fps = 1
     dis_video = open(os.path.join(
-        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2022_SPRING_yuv_update/', upscaled_yuv_names[i]))
+        '/mnt/31393986-51f4-4175-8683-85582af93b23/videos/HDR_2021_fall_yuv_upscaled/fall2021_hdr_upscaled_yuv', upscaled_yuv_names[i]))
 
     ref_video = open(ref_video_name)
 
@@ -249,8 +249,8 @@ output_pth = os.path.join(args.output_pth, 'strred')
 
 if not os.path.exists(output_pth):
     os.makedirs(output_pth)
-r = Parallel(n_jobs=80)(delayed(single_vid_strred)(i)
-                       for i in range(0, len(upscaled_yuv_names)))
+r = Parallel(n_jobs=100)(delayed(single_vid_strred)(i)
+                         for i in range(0, len(upscaled_yuv_names)))
 features = pd.concat(r)
 features.to_csv(
     f'{output_pth}/strred_{args.nonlinear_method}_{args.type}_{args.nonlinear_param}_{args.patch_size}_.csv')
